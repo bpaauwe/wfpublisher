@@ -67,7 +67,7 @@ void *send_to_cwop(void *data)
 	if ((lt->tm_min % 10) != 0) {
 		/* would like to create average */
 		ws.pressure += (wd->pressure * 338.637526);         /* in millibars * 10 */
-		ws.uncalibrated += (wd->uncalibrated * 338.637526);
+		//ws.uncalibrated += (wd->uncalibrated * 338.637526);
 		ws.windspeed += wd->windspeed;
 		ws.winddirection += wd->winddirection;
 		ws.temperature += wd->temperature;

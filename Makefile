@@ -14,6 +14,8 @@ SOURCE= \
 		wfp-wunderground.c \
 		wfp-cwop.c \
 		wfp-pws.c \
+		wfp-log.c \
+		wfp-db.c \
 		wfp.h \
 		cJSON.c \
 		cJSON.h
@@ -26,6 +28,8 @@ OBJECTS= \
 		 wfp-wbug.o \
 		 wfp-wunderground.o \
 		 wfp-pws.o \
+		 wfp-log.o \
+		 wfp-db.o \
 		 wfp-cwop.o \
 		 cJSON.o
 		

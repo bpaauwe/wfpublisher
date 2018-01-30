@@ -28,6 +28,18 @@
  * read from a configuration file by design.
  */
 
+struct service_info {
+	char *host;
+	char *name;
+	char *pass;
+	char *extra;
+	char *location_lat;
+	char *location_long;
+	int enabled;
+	int index;
+};
+
+
 /* This defines the database name, account, and password */
 #define DB_HOST "sirius.bobsplace.com"
 #define DB_NAME "weather"
@@ -62,7 +74,8 @@
 #define WEATHERBUG    2
 #define CWOP          3
 #define PWS           4
-#define SERVICE_END   5
+#define DB_MYSQL      5
+#define SERVICE_END   6
 #define for_each_service(s) for((s) = LOCAL; (s) < SERVICE_END; (s)++)
 
 

@@ -36,6 +36,8 @@ extern void *send_to_wunderground(void *data);
 extern void *send_to_weatherbug(void *data);
 extern void *send_to_cwop(void *data);
 extern void *send_to_pws(void *data);
+extern void *send_to_log(void *data);
+extern void *send_to_db(void *data);
 
 extern int debug;
 extern int verbose;
@@ -88,6 +90,12 @@ void send_to(int service, weather_data_t *wd)
 			if (!skip_pws)
 				err = pthread_create(&w_thread, NULL, send_to_pws,
 						(void *)wd_copy);
+			break;
+		case DB_MYSQL:
+			err = pthread_create(&w_thread, NULL, send_to_db, (void *)wd_copy);
+			break;
+		case LOCAL:
+			err = pthread_create(&w_thread, NULL, send_to_log, (void *)wd_copy);
 			break;
 		default:
 			fprintf(stderr, "send_to: Unknown weather service %d\n", service);

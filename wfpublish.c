@@ -61,13 +61,16 @@ static int update_database(void);
 static int wf_message_parse(char *msg);
 static void wfp_air_parse(cJSON *air);
 static void wfp_sky_parse(cJSON *sky);
-static double TempF(double tempc);
-static double MS2MPH(double ms);
 static double calc_dewpoint(void);
 static double calc_heatindex(void);
 static double calc_windchill(void);
 static double calc_feelslike(void);
 static int calc_pressure_trend(void);
+static void read_config(void);
+static void *publish(void *args);
+double TempF(double tempc);
+double MS2MPH(double ms);
+double mb2in(double mb);
 
 extern void send_to(int service, weather_data_t *wd);
 extern void *start_server(void *args);
@@ -90,6 +93,9 @@ int dont_send = 0;       /* send data to weather services */
 bool connected = false;
 char *log_filename = LOG;
 weather_data_t wd;
+int interval = 0;
+int status = 0;
+struct service_info sinfo[6];
 
 bool skip_wu = false;
 bool skip_wb = false;
@@ -103,7 +109,7 @@ int main (int argc, char **argv)
 	char line[1024];
 	int i;
 	int bytes;
-	pthread_t api_thread;
+	pthread_t send_thread;
 	char *database = DB_NAME;
 	char *host = DB_HOST;
 	int sock;
@@ -181,6 +187,7 @@ int main (int argc, char **argv)
 
 	memset(&wd, 0, sizeof(weather_data_t));
 
+	read_config();
 
 	if (!skip_db) {
 		/* Initialize and open connection to database */
@@ -199,6 +206,7 @@ int main (int argc, char **argv)
 	 * and start new threads to send the data to each of the enabled
 	 * services.
 	 */
+	pthread_create(&send_thread, NULL, publish, NULL);
 
 	/*
 	 * The main loop will just wait for UDP packets on port
@@ -233,7 +241,6 @@ int main (int argc, char **argv)
 static int wf_message_parse(char *msg) {
 	cJSON *msg_json;
 	const cJSON *type = NULL;
-	int status = 0;
 
 	msg_json = cJSON_Parse(msg);
 	if (msg == NULL) {
@@ -250,9 +257,11 @@ static int wf_message_parse(char *msg) {
 		if (strcmp(type->valuestring, "obs_air") == 0) {
 			printf("-> Air packet\n");
 			wfp_air_parse(msg_json);
+			status |= 0x01;
 		} else if (strcmp(type->valuestring, "obs_sky") == 0) {
 			printf("-> Sky packet\n");
 			wfp_sky_parse(msg_json);
+			status |= 0x02;
 		} else if (strcmp(type->valuestring, "rapid_wind") == 0) {
 			printf("-> Rapid Wind packet\n");
 		} else if (strcmp(type->valuestring, "evt_strike") == 0) {
@@ -332,13 +341,25 @@ static void wfp_sky_parse(cJSON *sky) {
 		SETWI(ob, wd.uv, 2);
 		SETWD(ob, wd.rain, 3);
 		SETWD(ob, wd.windspeed, 5); // m/s
-		SETWD(ob, wd.gustspeed, 6); // m/s
+		/* SETWD(ob, wd.gustspeed, 6); */ // m/s
 		SETWD(ob, wd.winddirection, 7);
 		SETWD(ob, wd.solar, 10);
 		SETWD(ob, wd.daily_rain, 11);
 
 		/* derrived values */
 		wd.windchill = calc_windchill();
+		wd.feelslike = calc_feelslike();
+
+		/* Track maximum gust over 10 intervals */
+		if (interval == 10) {
+			SETWD(ob, wd.gustspeed, 6); // m/s
+			interval = 0;
+		} else {
+			tmp = cJSON_GetArrayItem(ob, 6);
+			if (tmp->valuedouble > wd.gustspeed)
+				wd.gustspeed = tmp->valuedouble;
+		}
+
 	}
 }
 
@@ -347,7 +368,7 @@ static double calc_dewpoint(void) {
 	double h;
 
 	b = (17.625 * wd.temperature) / (243.04 + wd.temperature);
-	h = log(h/100);
+	h = log(wd.humidity/100);
 
 	return (243.04 * (h + b)) / (17.625 - h - b);
 
@@ -392,9 +413,6 @@ static double calc_windchill(void) {
  * Returns temp in F
  */
 static double calc_feelslike(void) {
-	double wv;
-	double ws;
-
 	if (TempF(wd.temperature) >= 80)
 		return calc_heatindex();
 	else if (TempF(wd.temperature) < 50)
@@ -408,65 +426,77 @@ static int calc_pressure_trend(void) {
 }
 
 
-static double TempF(double tempc) {
+double TempF(double tempc) {
 	return (tempc * 1.8) + 32;
 }
 
-static double MS2MPH(double ms) {
+double MS2MPH(double ms) {
 	return ms / 0.44704;
 }
 
-
-#if 0
-static void set_dewpoint(void)
-{
-	double humidity = <tbd>;
-	double T;
-	double B;
-	double dewpoint_c;
-
-	if (humidity == 0.0)
-		return;
-
-	/* convert temperature to Celcius */
-	T = (sensors[TEMPERATURE].data - 32) * 5 / 9;
-
-	B = (log(humidity / 100) + ((17.27 * T) / (237.3 + T))) / 17.27;
-	dewpoint_c = (237.3 * B) / (1 - B);
-
-	sensors[s].data = (dewpoint_c * 9 / 5 + 32);
+double mb2in(double mb) {
+	return mb * 0.02952998751;
 }
 
-static void set_heatindex(enum SENSORS s)
-{
-	double T = sensors[TEMPERATURE].data;
-	double R = sensors[HUMIDITY].data;
-	double C1 = -42.379;
-	double C2 = 2.04901523;
-	double C3 = 10.14333127;
-	double C4 = -0.22475541;
-	double C5 = -6.83783 * pow(10,-3);
-	double C6 = -5.481717 * pow(10,-2);
-	double C7 = 1.22874 * pow(10,-3);
-	double C8 = 8.5282 * pow(10,-4);
-	double C9 = -1.99 * pow(10,-6);
+static void read_config(void) {
+	FILE *fp;
+	char *json;
+	int len;
+	cJSON *cfg_json;
+	cJSON *services;
+	cJSON *cfg;
+	const cJSON *type = NULL;
+	int i;
+	int index;
 
-	if ((T < 80.0) || (R < 40.0))
-		sensors[s].data = T;
-	else
-		sensors[s].data = C1 + (C2 * T) + (C3 * R) + (C4 * T * R) +
-			(C5 * T * T) + (C6 * R * R) + (C7 * T * T * R) + (C8 * T * R * R) +
-			(C9 * T * T * R * R);
-}
 
-static void set_gusts(enum SENSORS s)
-{
-	if (sensors[WINDSPEED].data > sensors[GUSTSP].data) {
-		sensors[GUSTSP].data  = sensors[WINDSPEED].data;
-		sensors[GUSTDIR].data = sensors[WINDDIR].data;
+	printf("Reading configuration file.\n");
+	json = malloc(4096);
+	fp = fopen("config", "r");
+	len = fread(json, 1, 4096, fp);
+	fclose (fp);
+
+	json[len] = '\0';
+
+	if (len > 0) {
+		cfg_json = cJSON_Parse(json);
+		services = cJSON_GetObjectItemCaseSensitive(cfg_json, "version");
+		printf("Version = %s\n", services->valuestring);
+
+		services = cJSON_GetObjectItemCaseSensitive(cfg_json, "services");
+		for (i = 0 ; i < cJSON_GetArraySize(services) ; i++) {
+			cfg = cJSON_GetArrayItem(services, i);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "index");
+			index = type->valueint;
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "host");
+			sinfo[index].host = strdup(type->valuestring);
+			printf("At index %d - Found  %s", i, type->valuestring);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "name");
+			sinfo[index].name = strdup(type->valuestring);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "password");
+			sinfo[index].pass = strdup(type->valuestring);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "extra");
+			sinfo[index].extra = strdup(type->valuestring);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_lat");
+			sinfo[index].location_lat = strdup(type->valuestring);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long");
+			sinfo[index].location_long = strdup(type->valuestring);
+
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled");
+			sinfo[index].enabled = type->valueint;
+			printf("  enabled[%d]=%d\n", index, sinfo[index].enabled);
+
+		}
 	}
 }
-#endif
+
 
 #if 0
 static void set_rainfall(enum SENSORS s)
@@ -496,63 +526,6 @@ static void set_rainfall(enum SENSORS s)
 	}
 }
 #endif
-
-
-static int my_getline(FILE *fp, char *s, int lim)
-{
-	int c, i = 0;
-	int ws = 0;
-
-	while(--lim > 0 && (c = fgetc(fp)) != EOF && c != '\n') {
-		if(c != '\r') {
-			if(!ws && ((c == ' ') || (c == '\t'))) {
-				/* skip leading white space */
-			} else {
-				s[i++] = c;
-				ws = 1;
-			}
-		}
-	}
-
-	s[i] = '\0';
-	if( c == EOF ) {
-		return (c);
-	} else {
-		return(i);
-	}
-}
-
-
-/*
- * make a copy the weather data for the publishing functions
- */
-static weather_data_t *weather_data(void)
-{
-	weather_data_t *wd;
-
-	wd = calloc(1, sizeof(weather_data_t));
-
-#if 0
-	wd->pressure = WD(PRESSURE);
-	wd->uncalibrated = WD(ABSOLUTE);
-	wd->temperature = WD(TEMPERATURE);
-	wd->humidity = WD(HUMIDITY);
-	wd->windspeed = WD(WINDSPEED);
-	wd->winddirection = WD(WINDDIR);
-	wd->gustspeed = WD(GUSTSP);
-	wd->gustdirection = WD(GUSTDIR);
-	wd->rainfall_1min = WD(RAINFALL);
-	wd->rainfall_1hr = WD(RAIN_HR);
-	wd->rainfall_day = WD(RAIN_DAY);
-	wd->rainfall_month = WD(RAIN_MONTH);
-	wd->rainfall_year = WD(RAIN_YEAR);
-	wd->dewpoint = WD(DEWPOINT);
-	wd->heatindex = WD(HEATINDEX);
-	//wd->timestamp = strdup(sensors[TIMESTAMP].name);
-#endif
-
-	return wd;
-}
 
 
 /*******
@@ -749,3 +722,41 @@ void rainfall_data_get(double *minute, double *hour, double *day,
 		mysql_free_result(result);
 	}
 }
+
+/*
+ * Publish the weather data to the various services
+ */
+static void *publish(void *args)
+{
+	int weather_service;
+
+	/* Wait until we've actually received some data */
+	while (status != (0x01 | 0x02)) {
+		printf("Waiting for valid data to be received status = 0x%x\n", status);
+		sleep(5);
+	}
+
+	while (1) {
+		for_each_service(weather_service) {
+			printf("%s is %s\n", sinfo[weather_service].host,
+					(sinfo[weather_service].enabled ? "enabled" : "disabled"));
+			if (sinfo[weather_service].enabled) {
+				if (debug)
+					printf("Sending weather data to service %s\n",
+							sinfo[weather_service].host);
+				send_to(weather_service, &wd);
+			}
+		}
+
+		if (!skip_db)
+			update_database();
+
+		sleep(60);
+	}
+
+	return 0;
+}
+
+
+
+
