@@ -54,10 +54,6 @@
 #include "wfp.h"
 #include "cJSON.h"
 
-#define LOG "/home/pi/weather.log"
-
-static bool connect_to_database(MYSQL *sql, char *db_host, char *db_name);
-static int update_database(void);
 static int wf_message_parse(char *msg);
 static void wfp_air_parse(cJSON *air);
 static void wfp_sky_parse(cJSON *sky);
@@ -73,8 +69,6 @@ double MS2MPH(double ms);
 double mb2in(double mb);
 
 extern void send_to(int service, weather_data_t *wd);
-extern void *start_server(void *args);
-extern void json_data_copy(weather_data_t *wd);
 extern void rainfall(double amount);
 extern double get_rain_hourly(void);
 extern double get_rain_daily(void);
@@ -90,8 +84,6 @@ int testmode = 0;        /* set when invoked in test mode */
 int debug = 0;           /* set when debugging output is enabled */
 int verbose = 0;         /* set when verbose output is enabled */
 int dont_send = 0;       /* send data to weather services */
-bool connected = false;
-char *log_filename = LOG;
 weather_data_t wd;
 int interval = 0;
 int status = 0;
@@ -102,7 +94,6 @@ bool skip_wb = false;
 bool skip_cw = false;
 bool skip_pws = false;
 bool skip_log = false;
-bool skip_db = true;
 
 int main (int argc, char **argv)
 {
@@ -110,8 +101,6 @@ int main (int argc, char **argv)
 	int i;
 	int bytes;
 	pthread_t send_thread;
-	char *database = DB_NAME;
-	char *host = DB_HOST;
 	int sock;
 	struct sockaddr_in s;
 	int optval;
@@ -150,18 +139,6 @@ int main (int argc, char **argv)
 							if (strcmp(argv[i], "vvv") == 0)
 								verbose = 3;
 							break;
-						case 'l': /* log file */
-							i++;
-							log_filename = strdup(argv[i]);
-							break;
-						case 'o': /* database */
-							i++;
-							database = strdup(argv[i]);
-							break;
-						case 'n': /* database host */
-							i++;
-							host = strdup(argv[i]);
-							break;
 						case 's':
 							dont_send = 1;
 							break;
@@ -171,10 +148,6 @@ int main (int argc, char **argv)
 							printf("        -s don't send to weather services\n");
 							printf("        -v verbose output\n");
 							printf("        -d turns on debugging\n");
-							printf("        -l <file> log to named file\n");
-							printf("        -o <database> use database\n");
-							printf("        -n <host> use database host\n");
-							printf("        -f use tcpflow test string\n");
 							printf("\n");
 
 							exit(0);
@@ -188,18 +161,6 @@ int main (int argc, char **argv)
 	memset(&wd, 0, sizeof(weather_data_t));
 
 	read_config();
-
-	if (!skip_db) {
-		/* Initialize and open connection to database */
-		if ((sql = mysql_init(NULL)) == NULL) {
-			fprintf(stderr, "Failed to initialize MySQL interface.\n");
-			exit(-1);
-		}
-
-		if (connect_to_database(sql, host, database)) {
-			connected = true;
-		}
-	}
 
 	/*
 	 * Start a thread to publish the data. The thread will wake up
@@ -232,7 +193,6 @@ int main (int argc, char **argv)
 		//printf("recv: %s\n", line);
 	}
 
-	if (!skip_db) mysql_close(sql);
 	close(sock);
 
 	exit(0);
@@ -319,6 +279,10 @@ static void wfp_air_parse(cJSON *air) {
 		wd.dewpoint = calc_dewpoint();	// farhenhi
 		wd.heatindex = calc_heatindex();// Celsius
 		wd.trend = calc_pressure_trend();
+		if (wd.temperature > wd.temperature_high)
+			wd.temperature_high = wd.temperature;
+		if (wd.temperature < wd.temperature_low)
+			wd.temperature_low = wd.temperature;
 	}
 }
 
@@ -339,12 +303,12 @@ static void wfp_sky_parse(cJSON *sky) {
 
 		SETWD(ob, wd.illumination, 1);
 		SETWI(ob, wd.uv, 2);
-		SETWD(ob, wd.rain, 3);
+		SETWD(ob, wd.rain, 3);     // over reporting interval
 		SETWD(ob, wd.windspeed, 5); // m/s
 		/* SETWD(ob, wd.gustspeed, 6); */ // m/s
 		SETWD(ob, wd.winddirection, 7);
 		SETWD(ob, wd.solar, 10);
-		SETWD(ob, wd.daily_rain, 11);
+		SETWD(ob, wd.daily_rain, 11);  // current day
 
 		/* derrived values */
 		wd.windchill = calc_windchill();
@@ -360,9 +324,20 @@ static void wfp_sky_parse(cJSON *sky) {
 				wd.gustspeed = tmp->valuedouble;
 		}
 
+		/* Track rainfall over time */
+		wd.rainfall_1hr = get_rain_hourly();    // current hour
+		wd.rainfall_day = get_rain_daily();     // current day
+		wd.rainfall_month = get_rain_monthly(); // current month
+		wd.rainfall_year = get_rain_yearly();   // current year
+		wd.rainfall_60min = get_rain_1hr();     // past 60 minutes
+		wd.rainfall_24hr = get_rain_24hrs();    // past 24 hours
+
 	}
 }
 
+/*
+ * Returns temp in C
+ */
 static double calc_dewpoint(void) {
 	double b;
 	double h;
@@ -498,231 +473,6 @@ static void read_config(void) {
 }
 
 
-#if 0
-static void set_rainfall(enum SENSORS s)
-{
-	switch (s) {
-		case RAIN_HR:
-			WD(s) = get_rain_hourly();
-			break;
-		case RAIN_DAY:
-			WD(s) = get_rain_daily();
-			break;
-		case RAIN_MONTH:
-			WD(s) = get_rain_monthly();
-			break;
-		case RAIN_YEAR:
-			WD(s) = get_rain_yearly();
-			break;
-		case RAIN_LHR:
-			WD(s) = get_rain_1hr();
-			break;
-		case RAIN_L24:
-			WD(s) = get_rain_24hrs();
-			break;
-		default:
-			//sensors[s].data += sensors[RAINFALL].data;
-			break;
-	}
-}
-#endif
-
-
-/*******
- *  Database Functions.
- *
- */
-
-
-/*
- * Make a connection to the database server.
- */
-static bool connect_to_database(MYSQL *sql, char *db_host, char *db_name)
-{
-	my_bool reconnect = 1;
-
-	printf("Connecting to database %s:%s\n", db_host, db_name);
-	mysql_options(sql, MYSQL_OPT_RECONNECT, &reconnect);
-
-	if (!mysql_real_connect(sql, db_host, DB_USER, DB_PASS, NULL, 0, NULL, 0)) {
-		fprintf(stderr, "Failed to connect to database: Error: %s\n",
-				mysql_error(sql));
-		return false;
-	}
-
-
-	if (mysql_select_db(sql, db_name)) {
-		fprintf(stderr, "Error selecting database: Error: %s\n",
-				mysql_error(sql));
-		return false;
-	}
-
-	printf("database is now conencted\n");
-	return true;
-}
-
-/*
- * Make a query to the database.  Keep trying until the query succeeds.
- *
- * Should this fail if the query fails?  Can the flow abort gracefully
- * if this fails?
- */
-static bool acu_query(char *query_str, char *msg)
-{
-	if (!connected)
-		return false;
-
-	if (sql == NULL)
-		return false;
-
-	/*
-	if (debug)
-		printf("Database status: %s\n", mysql_stat(sql));
-	*/
-
-	if (mysql_ping(sql)) {
-		fprintf(stderr, "acu_query: Connection is down and cannot reconnect\n");
-		return false;
-	}
-
-	if (mysql_query(sql, query_str)) {
-		fprintf(stderr, "%s: %s\n", msg, mysql_error(sql));
-		return false;
-	}
-
-	return true;
-}
-
-
-/*
- * Update the database record with any new data.
- *
- * For debugging, may want to look at most recent record. to do that
- * select * from weather_log order by timestamp desc limit 1
- */
-static int update_database(void)
-{
-	char *query;
-	int ret = 0;
-
-	/* Generate the sql statment to update the database. */
-#if 0
-	ret = asprintf(&query, "insert into weather_log set "
-			"pressure=\"%f\","
-			"uncalibrated=\"%f\","
-			"temperature=\"%f\","
-			"humidity=\"%f\","
-			"windspeed=\"%f\","
-			"winddirection=\"%f\","
-			"gustspeed=\"%f\","
-			"gustdirection=\"%f\","
-			"rainfall_1min=\"%f\","
-			"rainfall_1hr=\"%f\","
-			"rainfall_day=\"%f\","
-			"rainfall_month=\"%f\","
-			"rainfall_year=\"%f\","
-			"dewpoint=\"%f\","
-			"heatindex=\"%f\","
-			"garage_temperature=\"%f\","
-			"garage_humidity=\"%f\","
-			"temperature_2=\"%f\","
-			"humidity_2=\"%f\","
-			"valid=\"%lu\"",
-			WD(PRESSURE), WD(ABSOLUTE),
-			WD(TEMPERATURE), WD(HUMIDITY),
-			WD(WINDSPEED), WD(WINDDIR),
-			WD(GUSTSP), WD(GUSTDIR),
-			WD(RAINFALL), WD(RAIN_HR), WD(RAIN_DAY),
-			WD(RAIN_MONTH), WD(RAIN_YEAR),
-			WD(DEWPOINT),
-			WD(HEATINDEX),
-			WD(TEMPERATURE2), WD(HUMIDITY2),
-			WD(TEMPERATURE3), WD(HUMIDITY3),
-#endif
-
-	if (ret == -1)
-		return ret;
-
-	if (!testmode) {
-		if (!acu_query(query, "Failed to update record"))
-			ret = -1;
-
-		if (debug) {
-			printf("\nDB Update: %s\n", query);
-		}
-	} else {
-		printf("\nTEST Updating database with: %s\n", query);
-	}
-
-	free(query);
-
-	return ret;
-}
-
-int rainfall_data_save(double min, double hour, double day, double month, double year)
-{
-	char *query;
-	int ret = 0;
-
-	/*
-	 * If a database table has only 1 row, do we need to specify it
-	 * in an update?
-	 */
-	/* Generate the sql statment to update the database. */
-	ret = asprintf(&query, "update rainfall set "
-			"minute_total=\"%f\","
-			"hour_total=\"%f\","
-			"day_total=\"%f\","
-			"month_total=\"%f\","
-			"year_total=\"%f\" "
-			"where valid=\"Y\"",
-			min, hour, day, month, year);
-	if (ret == -1)
-		return ret;
-
-	if (!acu_query(query, "Failed to update rainfall data")) {
-		/* Does this mean the record didn't exist? */
-		free(query);
-		ret = asprintf(&query, "insert into rainfall set "
-				"minute_total=\"%f\","
-				"hour_total=\"%f\","
-				"day_total=\"%f\","
-				"month_total=\"%f\","
-				"year_total=\"%f\","
-				"valid=\"Y\"",
-				min, hour, day, month, year);
-		if (!acu_query(query, "Failed to update rainfall data"))
-			ret = -1;
-	}
-
-	free(query);
-	return ret;
-}
-
-static char *rain_data_query = "select * from rainfall";
-void rainfall_data_get(double *minute, double *hour, double *day,
-		double *month, double *year)
-{
-	MYSQL_RES *result;
-	MYSQL_ROW row;
-
-	if (acu_query(rain_data_query, "Failed to access rainfall data")) {
-		/* Do row selection */
-		result = mysql_use_result(sql);
-		row = mysql_fetch_row(result);
-		printf("queried rainfall data.  %s  %s  %s\n", (char *)row[2], (char *)row[3], (char *)row[4]);
-
-		if (row[0]) {
-			*minute = atof((char *)row[0]);
-			*hour   = atof((char *)row[1]);
-			*day    = atof((char *)row[2]);
-			*month  = atof((char *)row[3]);
-			*year   = atof((char *)row[4]);
-		}
-		mysql_free_result(result);
-	}
-}
-
 /*
  * Publish the weather data to the various services
  */
@@ -747,9 +497,6 @@ static void *publish(void *args)
 				send_to(weather_service, &wd);
 			}
 		}
-
-		if (!skip_db)
-			update_database();
 
 		sleep(60);
 	}

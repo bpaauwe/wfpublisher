@@ -41,15 +41,20 @@ extern void *send_to_db(void *data);
 
 extern int debug;
 extern int verbose;
-extern bool skip_wu;
-extern bool skip_wb;
-extern bool skip_cw;
-extern bool skip_pws;
-
+extern struct service_info sinfo[6];
 
 static char *resolve_host(char *host);
 static char *resolve_host_ip6(char *host);
 char *time_stamp(int gmt, int mode);
+
+static void *(*send_to_table[6])(void *data) = {
+	send_to_log,
+	send_to_wunderground,
+	send_to_weatherbug,
+	send_to_cwop,
+	send_to_pws,
+	send_to_db,
+};
 
 static int send_count = 0;
 
@@ -59,6 +64,9 @@ void send_to(int service, weather_data_t *wd)
 	pthread_t w_thread;
 	int err = 1;
 	char *ts;
+
+	if (service >= SERVICE_END)
+		goto end;
 
 	send_count++;
 
@@ -70,48 +78,19 @@ void send_to(int service, weather_data_t *wd)
 	}
 	memcpy(wd_copy, wd, sizeof(weather_data_t));
 
-	switch(service) {
-		case WUNDERGROUND:
-			if (!skip_wu)
-				err = pthread_create(&w_thread, NULL, send_to_wunderground,
-						(void *)wd_copy);
-			break;
-		case WEATHERBUG:
-			if (!skip_wb)
-				err = pthread_create(&w_thread, NULL, send_to_weatherbug,
-						(void *)wd_copy);
-			break;
-		case CWOP:
-			if (!skip_cw)
-				err = pthread_create(&w_thread, NULL, send_to_cwop,
-						(void *)wd_copy);
-			break;
-		case PWS:
-			if (!skip_pws)
-				err = pthread_create(&w_thread, NULL, send_to_pws,
-						(void *)wd_copy);
-			break;
-		case DB_MYSQL:
-			err = pthread_create(&w_thread, NULL, send_to_db, (void *)wd_copy);
-			break;
-		case LOCAL:
-			err = pthread_create(&w_thread, NULL, send_to_log, (void *)wd_copy);
-			break;
-		default:
-			fprintf(stderr, "send_to: Unknown weather service %d\n", service);
-			free(wd_copy);
-			return;
-	}
+	err = pthread_create(&w_thread, NULL, send_to_table[service],
+			(void *)wd_copy);
 
 	if (err) {
 		free(wd_copy);
 		ts = time_stamp(0, 1);
-		fprintf(stderr, "%s: Failed to create thread to service %d (cnt=%d): %s\n",
-				ts, service, send_count, strerror(err));
+		fprintf(stderr, "%s: Failed to create thread for %s (cnt=%d): %s\n",
+				ts, sinfo[service].name, send_count, strerror(err));
 		free(ts);
 	}
 
 	pthread_detach(w_thread);
+end:
 	return;
 }
 

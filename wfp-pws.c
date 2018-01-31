@@ -33,6 +33,11 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
+extern struct service_info sinfo[6];
+extern double TempF(double c);
+extern double MS2MPH(double ms);
+extern double mb2in(double mb);
+
 
 extern int debug;
 extern int verbose;
@@ -106,23 +111,27 @@ void *send_to_pws(void *data)
 			"&tempf=%f"
 			"&monthrainin=%.2f"
 			"&yearrainin=%.2f"
+			"&solarradiation=%.2f"
+			"&UV=%.2f"
 			"&softwaretype=ACU-LINK"
 			"&action=updateraw",
-			PWS_ID,
-			PWS_KEY,
+			sinfo[PWS].name,
+			sinfo[PWS].pass,
 			ts_start,
-			(ws.pressure / count),
+			mb2in(ws.pressure / count),
 			(ws.rainfall_day),
 			(ws.rainfall_1hr),
 			(ws.winddirection / count),
-			(ws.gustspeed),
-			(ws.windspeed / count),
+			MS2MPH(ws.gustspeed),
+			MS2MPH(ws.windspeed / count),
 			(ws.humidity / count),
-			(ws.dewpoint / count),
-			(ws.temperature / count),
+			TempF(ws.dewpoint / count),
+			TempF(ws.temperature / count),
 			(ws.rainfall_month),
-			(ws.rainfall_year)
-		   );
+			(ws.rainfall_year),
+			ws.solar,
+			ws.uv
+			);
 
 	if (verbose > 1)
 		fprintf(stderr, "PWSWeather: %s\n", request);
@@ -139,9 +148,9 @@ void *send_to_pws(void *data)
 	str = (char *)malloc(4096);
 
 
-	sprintf(str, tpl, request, PWS_HOST, "acu-link");
+	sprintf(str, tpl, request, sinfo[PWS].host, "acu-link");
 	if (!debug) {
-		send_url(PWS_HOST, 80, str, NULL, 1);
+		send_url(sinfo[PWS].host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}

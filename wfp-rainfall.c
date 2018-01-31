@@ -157,8 +157,14 @@ void rainfall(double amount)
 	}
 	yearly.amount += amount;
 
-	/* Save current data */
-	rainfall_data_save(minutely.amount, hourly.amount, daily.amount, monthly.amount, yearly.amount);
+	/*
+	 * Save current data
+	 * TODO: Should this really be saving to the database?  Maybe we want to
+	 * use a data file instead so that we don't have to rely on having a
+	 * database configured.
+	 * Would it be a bad idea to have this stored in the config file?
+	 */
+	//rainfall_data_save(minutely.amount, hourly.amount, daily.amount, monthly.amount, yearly.amount);
 
 }
 
@@ -184,12 +190,14 @@ static void init_rainfall()
 	yearly.amount = 0;
 	yearly.next = NULL;
 
+	/* TODO: Should this really query the database?
 	rainfall_data_get(
 			&minutely.amount,
 			&hourly.amount,
 			&daily.amount,
 			&monthly.amount,
 			&yearly.amount);
+	*/
 }
 
 

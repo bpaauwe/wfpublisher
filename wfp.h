@@ -39,36 +39,6 @@ struct service_info {
 	int index;
 };
 
-
-/* This defines the database name, account, and password */
-#define DB_HOST "sirius.bobsplace.com"
-#define DB_NAME "weather"
-#define DB_USER "weather"
-#define DB_PASS "weather"
-
-/* This defines the connection information for Weather Underground */
-#define WU_HOST       "weatherstation.wunderground.com"
-#define WU_STATION_ID "KCAELDOR15"
-#define WU_PASSWORD   "gesserit"
-
-
-/* This defines the connection information for WeatherBug */
-#define WB_HOST    "data.backyard2.weatherbug.com"
-#define WB_ID      "p17648"
-#define WB_KEY     "gesserit"
-#define WB_NUM     "29244"
-
-/* This defines the connection information for CWOP */
-#define CWOP_HOST  "cwop.aprs.net"
-#define CWOP_ID    "EW4740"
-#define CWOP_LAT   "3840.67N"
-#define CWOP_LONG  "12100.70W"
-
-/* This defines the connection information for PWS Weather */
-#define PWS_HOST    "www.pwsweather.com"
-#define PWS_ID      "BOBSPLACE"
-#define PWS_KEY     "gesserit"
-
 #define LOCAL         0
 #define WUNDERGROUND  1
 #define WEATHERBUG    2
@@ -78,65 +48,6 @@ struct service_info {
 #define SERVICE_END   6
 #define for_each_service(s) for((s) = LOCAL; (s) < SERVICE_END; (s)++)
 
-
-enum SENSORS {
-	TEMPERATURE = 0,
-	TEMPERATURE2,
-	TEMPERATURE3,
-	HUMIDITY,
-	HUMIDITY2,
-	HUMIDITY3,
-	WINDSPEED,
-	WINDDIR,
-	RAINFALL,
-	GUSTSP,
-	GUSTDIR,
-	RAIN_HR,
-	RAIN_DAY,
-	RAIN_MONTH,
-	RAIN_YEAR,
-	RAIN_LHR,
-	RAIN_L24,
-	DEWPOINT,
-	HEATINDEX,
-	PRESSURE,
-	ABSOLUTE,
-	TIMESTAMP,
-	VALID,
-	END
-};
-
-#define for_each_sensor(p) for((p) = TEMPERATURE; (p) < END; (p)++)
-
-/*
- * TODO:
- *   This could replace the weather_data_t structure below. Then
- *   the data collected becomes a lot more extensible.  You just
- *   need to add a new item to the array with some definition
- *   about how it gets populated.
- *
- *   if name is not NULL, then the data comes from the input stream.
- *   if the calculate function is not NULL, it's calculated data.
- */
-typedef struct _sensor_info {
-	int id;
-	char *name;
-	char *description;
-	double data;  /* Future rework, change sensors to data fields */
-	double (*parse)(char *);
-	void (*calculate)(enum SENSORS s);
-	void (*clear)(enum SENSORS s);
-	char raw[12]; /* raw data from bridge */
-} sensor_info_t;
-
-typedef struct _raw {
-	char sensor[12];
-	char temperature[12];
-	char humidity[12];
-	char windspeed[12];
-	char winddirection[12];
-	char rainfall[12];
-} raw_data_t;
 
 /*
  * This structure holds a data record. It is built from the current
@@ -158,7 +69,6 @@ typedef struct _wd {
 	int strikes;
 	double rain;
 	double daily_rain;
-	double rainfall_1min;
 	double rainfall_1hr;
 	double rainfall_day;
 	double rainfall_month;
@@ -173,7 +83,6 @@ typedef struct _wd {
 	double trend;
 	double feelslike;
 	unsigned long valid;
-	raw_data_t raw;
 } weather_data_t;
 
 /*

@@ -102,7 +102,7 @@ void *send_to_db(void *data)
 			MS2MPH(wd->windspeed),
 			wd->winddirection,
 			MS2MPH(wd->gustspeed),
-			wd->rainfall_1min,
+			wd->rain,
 			wd->rainfall_1hr,
 			wd->rainfall_day,
 			wd->rainfall_month,
@@ -193,3 +193,73 @@ static int db_query(MYSQL *sql, char *query_str, char *msg)
 }
 
 
+/*
+ * Rainfall tracking
+ *
+ * Store/retrieve rainfall data using the database.
+ */
+
+int rainfall_data_save(MYSQL *sql, double min, double hour, double day,
+		double month, double year)
+{
+	char *query;
+	int ret = 0;
+
+	/*
+	 * If a database table has only 1 row, do we need to specify it
+	 * in an update?
+	 */
+	/* Generate the sql statment to update the database. */
+	ret = asprintf(&query, "update rainfall set "
+			"minute_total=\"%f\","
+			"hour_total=\"%f\","
+			"day_total=\"%f\","
+			"month_total=\"%f\","
+			"year_total=\"%f\" "
+			"where valid=\"Y\"",
+			min, hour, day, month, year);
+	if (ret == -1)
+		return ret;
+
+	if (!db_query(sql, query, "Failed to update rainfall data")) {
+		/* Does this mean the record didn't exist? */
+		free(query);
+		ret = asprintf(&query, "insert into rainfall set "
+				"minute_total=\"%f\","
+				"hour_total=\"%f\","
+				"day_total=\"%f\","
+				"month_total=\"%f\","
+				"year_total=\"%f\","
+				"valid=\"Y\"",
+				min, hour, day, month, year);
+		if (!db_query(sql, query, "Failed to update rainfall data"))
+			ret = -1;
+	}
+
+	free(query);
+	return ret;
+}
+
+static char *rain_data_query = "select * from rainfall";
+void rainfall_data_get(MYSQL *sql, double *minute, double *hour, double *day,
+		double *month, double *year)
+{
+	MYSQL_RES *result;
+	MYSQL_ROW row;
+
+	if (db_query(sql, rain_data_query, "Failed to access rainfall data")) {
+		/* Do row selection */
+		result = mysql_use_result(sql);
+		row = mysql_fetch_row(result);
+		printf("queried rainfall data.  %s  %s  %s\n", (char *)row[2], (char *)row[3], (char *)row[4]);
+
+		if (row[0]) {
+			*minute = atof((char *)row[0]);
+			*hour   = atof((char *)row[1]);
+			*day    = atof((char *)row[2]);
+			*month  = atof((char *)row[3]);
+			*year   = atof((char *)row[4]);
+		}
+		mysql_free_result(result);
+	}
+}

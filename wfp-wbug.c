@@ -33,6 +33,10 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
+extern struct service_info sinfo[6];
+extern double TempF(double c);
+extern double MS2MPH(double ms);
+extern double mb2in(double mb);
 
 extern int debug;
 extern int verbose;
@@ -110,9 +114,9 @@ void *send_to_weatherbug(void *data)
 			"&tempf=%f"
 			"&monthlyrainin=%.2f"
 			"&Yearlyrainin=%.2f",
-			WB_ID,
-			WB_KEY,
-			WB_NUM,
+			sinfo[WEATHERBUG].name,
+			sinfo[WEATHERBUG].pass,
+			sinfo[WEATHERBUG].extra,
 			ts_start,
 			(ws.pressure / count),
 			(ws.rainfall_day),
@@ -143,9 +147,9 @@ void *send_to_weatherbug(void *data)
 	str = (char *)malloc(4096);
 
 
-	sprintf(str, tpl, request, WB_HOST, "acu-link");
+	sprintf(str, tpl, request, sinfo[WEATHERBUG].host, "acu-link");
 	if (!debug) {
-		send_url(WB_HOST, 80, str, NULL, 1);
+		send_url(sinfo[WEATHERBUG].host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}

@@ -33,6 +33,10 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
+extern struct service_info sinfo[6];
+extern double TempF(double c);
+extern double MS2MPH(double ms);
+extern double mb2in(double mb);
 
 extern int debug;
 extern int verbose;
@@ -80,12 +84,12 @@ void *send_to_wunderground(void *data)
 			"&humidity=%f"
 			"&dewptf=%f"
 			"&tempf=%f",
-			WU_STATION_ID,
-			WU_PASSWORD,
+			sinfo[WUNDERGROUND].name,
+			sinfo[WUNDERGROUND].pass,
 			ts_start,
 			wd->pressure,
 			wd->rainfall_day,
-			wd->rainfall_1min,
+			wd->rain,
 			wd->gustdirection,
 			wd->winddirection,
 			wd->gustspeed,
@@ -109,9 +113,9 @@ void *send_to_wunderground(void *data)
 
 	str = (char *)malloc(4096);
 
-	sprintf(str, tpl, request, WU_HOST, "acu-link");
+	sprintf(str, tpl, request, sinfo[WUNDERGROUND].host, "acu-link");
 	if (!debug) {
-		send_url(WU_HOST, 80, str, NULL, 1);
+		send_url(sinfo[WUNDERGROUND].host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}
