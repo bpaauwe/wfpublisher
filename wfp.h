@@ -45,7 +45,8 @@ struct service_info {
 #define CWOP          3
 #define PWS           4
 #define DB_MYSQL      5
-#define SERVICE_END   6
+#define MQTT          6
+#define SERVICE_END   7
 #define for_each_service(s) for((s) = LOCAL; (s) < SERVICE_END; (s)++)
 
 

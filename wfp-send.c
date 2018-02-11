@@ -38,22 +38,24 @@ extern void *send_to_cwop(void *data);
 extern void *send_to_pws(void *data);
 extern void *send_to_log(void *data);
 extern void *send_to_db(void *data);
+extern void *mqtt_publish(void *data);
 
 extern int debug;
 extern int verbose;
-extern struct service_info sinfo[6];
+extern struct service_info sinfo[7];
 
 static char *resolve_host(char *host);
 static char *resolve_host_ip6(char *host);
 char *time_stamp(int gmt, int mode);
 
-static void *(*send_to_table[6])(void *data) = {
+static void *(*send_to_table[7])(void *data) = {
 	send_to_log,
 	send_to_wunderground,
 	send_to_weatherbug,
 	send_to_cwop,
 	send_to_pws,
 	send_to_db,
+	mqtt_publish,
 };
 
 static int send_count = 0;

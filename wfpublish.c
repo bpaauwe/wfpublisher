@@ -70,12 +70,15 @@ double mb2in(double mb);
 
 extern void send_to(int service, weather_data_t *wd);
 extern void rainfall(double amount);
-extern double get_rain_hourly(void);
-extern double get_rain_daily(void);
-extern double get_rain_monthly(void);
-extern double get_rain_yearly(void);
-extern double get_rain_1hr(void);
-extern double get_rain_24hrs(void);
+extern void accumulate_rain(weather_data_t *wd, double rain);
+extern int mqtt_init(void);
+extern void mqtt_disconnect(void);
+//extern double get_rain_hourly(void);
+//extern double get_rain_daily(void);
+//extern double get_rain_monthly(void);
+//extern double get_rain_yearly(void);
+//extern double get_rain_1hr(void);
+//extern double get_rain_24hrs(void);
 extern char *time_stamp(int gmt, int mode);
 
 /* Globals */
@@ -87,7 +90,7 @@ int dont_send = 0;       /* send data to weather services */
 weather_data_t wd;
 int interval = 0;
 int status = 0;
-struct service_info sinfo[6];
+struct service_info sinfo[7];
 
 bool skip_wu = false;
 bool skip_wb = false;
@@ -161,6 +164,7 @@ int main (int argc, char **argv)
 	memset(&wd, 0, sizeof(weather_data_t));
 
 	read_config();
+	mqtt_init();
 
 	/*
 	 * Start a thread to publish the data. The thread will wake up
@@ -193,6 +197,7 @@ int main (int argc, char **argv)
 		//printf("recv: %s\n", line);
 	}
 
+	mqtt_disconnect();
 	close(sock);
 
 	exit(0);
@@ -326,12 +331,12 @@ static void wfp_sky_parse(cJSON *sky) {
 
 		/* Track rainfall over time */
 		accumulate_rain(&wd, wd.rain);
-		wd.rainfall_1hr = get_rain_hourly();    // current hour
-		wd.rainfall_day = get_rain_daily();     // current day
-		wd.rainfall_month = get_rain_monthly(); // current month
-		wd.rainfall_year = get_rain_yearly();   // current year
-		wd.rainfall_60min = get_rain_1hr();     // past 60 minutes
-		wd.rainfall_24hr = get_rain_24hrs();    // past 24 hours
+		//wd.rainfall_1hr = get_rain_hourly();    // current hour
+		//wd.rainfall_day = get_rain_daily();     // current day
+		//wd.rainfall_month = get_rain_monthly(); // current month
+		//wd.rainfall_year = get_rain_yearly();   // current year
+		//wd.rainfall_60min = get_rain_1hr();     // past 60 minutes
+		//wd.rainfall_24hr = get_rain_24hrs();    // past 24 hours
 
 	}
 }

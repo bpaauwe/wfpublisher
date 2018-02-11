@@ -16,6 +16,7 @@ SOURCE= \
 		wfp-pws.c \
 		wfp-log.c \
 		wfp-db.c \
+		wfp-mqtt.c \
 		wfp.h \
 		cJSON.c \
 		cJSON.h
@@ -30,17 +31,19 @@ OBJECTS= \
 		 wfp-pws.o \
 		 wfp-log.o \
 		 wfp-db.o \
+		 wfp-mqtt.o \
 		 wfp-cwop.o \
 		 cJSON.o
 		
 
 MYSQL=-L/usr/lib64/mysql -lmysqlclient -lpthread -lm
+MOSQUITTO=-lmosquitto -lssl -lcrypto -lcares
 
 all: wfpublish
 
 
 wfpublish: $(OBJECTS)
-	cc -o wfpublish -g $(OBJECTS) $(MYSQL)
+	cc -o wfpublish -g $(OBJECTS) $(MYSQL) $(MOSQUITTO)
 
 install: wfpublish 
 	cp wfpublish /usr/local/bin
