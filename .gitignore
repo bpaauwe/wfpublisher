@@ -1,0 +1,5 @@
+*.o
+config
+wfpublish
+wfpublisher.log
+
