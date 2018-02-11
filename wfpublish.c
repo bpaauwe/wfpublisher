@@ -308,7 +308,7 @@ static void wfp_sky_parse(cJSON *sky) {
 		/* SETWD(ob, wd.gustspeed, 6); */ // m/s
 		SETWD(ob, wd.winddirection, 7);
 		SETWD(ob, wd.solar, 10);
-		SETWD(ob, wd.daily_rain, 11);  // current day
+		//SETWD(ob, wd.daily_rain, 11);  // current day (null in UDP packets)
 
 		/* derrived values */
 		wd.windchill = calc_windchill();
@@ -325,6 +325,7 @@ static void wfp_sky_parse(cJSON *sky) {
 		}
 
 		/* Track rainfall over time */
+		accumulate_rain(&wd, wd.rain);
 		wd.rainfall_1hr = get_rain_hourly();    // current hour
 		wd.rainfall_day = get_rain_daily();     // current day
 		wd.rainfall_month = get_rain_monthly(); // current month

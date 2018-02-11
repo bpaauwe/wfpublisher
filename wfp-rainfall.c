@@ -59,6 +59,57 @@ static rainrec_t daily;
 static rainrec_t monthly;
 static rainrec_t yearly;
 
+static double rain_60_min[60];
+static double rain_24_hr[24];
+
+/*
+ * Rain data comes in at mm's over a 1 minute interval. Use
+ * this to track rain over other timeframes.
+ *
+ * Save the accumulated rain values so that we can recover
+ * from a restart.
+ */
+void accumulate_rain(weather_data_t *wd, double rain)
+{
+	time_t sec = time(NULL);
+	struct tm *lt = localtime(&sec);
+
+	wd->rainfall_1hr = get_rain_hourly();    // current hour
+	/* Every hour */
+	wd->rainfall_hr = (lt->tm_min == 0) ? rain : wd->rainfall_hr + rain;
+
+	/* day */
+	if ((lt->tm_hour == 0) && (lt->tm_min == 0))
+		wd->rainfall_day = rain;
+	else
+		wd->rainfall_day += rain;
+
+	/* month */
+	if ((lt->tm_mday == 1) && (lt->tm_hour == 0) && (lt->tm_min == 0))
+		wd->rainfall_month = rain;
+	else
+		wd->rainfall_month += rain;
+
+	/* year */
+	if ((lt->tm_mon =- 0) && (lt->tm_mday == 1) && (lt->tm_hour == 0) && (lt->tm_min == 0))
+		wd->rainfall_year = rain;
+	else
+		wd->rainfall_year += rain;
+
+	rain_60_min[lt->tm_min] = rain;
+	wd->rainfall_60min = 0;
+	for (i = 0; i < 60; i++)
+		wd->rainfall_60min += rain_60_min[i];
+
+	rain_24_hr[lt->tm_hour] = wd->rainfall_hr;
+	wd->rainfall_24hr = 0;
+	for (i = 0; i < 24; i++)
+		wd->rainfall_24hr += rain_24_hr[i];
+
+	/* Save current values */
+
+}
+
 /*
  * Rainfall.
  *

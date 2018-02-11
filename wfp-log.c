@@ -80,7 +80,7 @@ void *send_to_log(void *data)
 			wd->rainfall_month,
 			wd->rainfall_day,
 			wd->rainfall_1hr,
-			wd->rainfall_1min,
+			wd->rain,
 			wd->winddirection,
 			MS2MPH(wd->gustspeed),
 			MS2MPH(wd->windspeed),
