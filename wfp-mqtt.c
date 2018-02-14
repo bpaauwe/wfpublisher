@@ -79,34 +79,34 @@ void *mqtt_publish(void *data)
 	int ret;
 
 	sprintf(buf, "%f", TempF(wd->temperature));
-	ret = mosquitto_publish(mosq, NULL, "Temperature", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Temperature", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->humidity);
-	ret = mosquitto_publish(mosq, NULL, "Humidity", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Humidity", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->pressure);
-	ret = mosquitto_publish(mosq, NULL, "Pressure", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Pressure", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", MS2MPH(wd->windspeed));
-	ret = mosquitto_publish(mosq, NULL, "Windspeed", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Windspeed", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", MS2MPH(wd->gustspeed));
-	ret = mosquitto_publish(mosq, NULL, "Gustspeed", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Gustspeed", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->winddirection);
-	ret = mosquitto_publish(mosq, NULL, "Winddirection", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Winddirection", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", TempF(wd->dewpoint));
-	ret = mosquitto_publish(mosq, NULL, "Dewpoint", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Dewpoint", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->solar);
-	ret = mosquitto_publish(mosq, NULL, "SolarRadition", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/SolarRadition", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->uv);
-	ret = mosquitto_publish(mosq, NULL, "UVIndex", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/UVIndex", strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rain);
-	ret = mosquitto_publish(mosq, NULL, "Rain", strlen(buf), buf, 0, false);
+	ret = mosquitto_publish(mosq, NULL, "home/climate/Rain", strlen(buf), buf, 0, false);
 
 	pthread_exit(NULL);
 	return NULL;
