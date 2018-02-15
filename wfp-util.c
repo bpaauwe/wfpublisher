@@ -227,6 +227,10 @@ double TempF(double tempc) {
 	return (tempc * 1.8) + 32;
 }
 
+double TempC(double tempf) {
+	return (tempf  - 32) / 1.8;
+}
+
 double MS2MPH(double ms) {
 	return ms / 0.44704;
 }
@@ -253,21 +257,21 @@ double calc_feelslike(double temp, double speed, double humidity) {
 	else if (TempF(temp) < 50)
 		return calc_windchill(temp, speed);
 	else
-		return TempF(temp);
+		return temp;
 }
 
 /*
  * Calculate the windchill temperature.
- * Returns temp in F
+ * Returns temp in C
  */
 double calc_windchill(double temp, double speed) {
 	double t = TempF(temp);
 	double v = MS2MPH(speed);
 
 	if ((t < 50.0) && (v > 5.0))
-		return 35.74 + (0.6215 * t) - (35.75 * pow(v, 0.16)) + (0.4275 * t * pow(v, 0.16));
+		return TempC(35.74 + (0.6215 * t) - (35.75 * pow(v, 0.16)) + (0.4275 * t * pow(v, 0.16)));
 	else
-		return t;
+		return temp;
 }
 
 /*
@@ -287,9 +291,9 @@ double calc_dewpoint(double t, double humidity) {
 
 /*
  * Calculates the heat index temperature.
- * Returns temp in F
+ * Returns temp in C
  */
-double calc_heatindex(double t, double h) {
+double calc_heatindex(double tc, double h) {
 	double c1 = -42.379;
 	double c2 = 2.04901523;
 	double c3 = 10.14333127;
@@ -299,12 +303,13 @@ double calc_heatindex(double t, double h) {
 	double c7 = 1.22874 * pow(10, -3);
 	double c8 = 8.5282 * pow(10, -4);
 	double c9 = -1.99 * pow(10, -6);
+	double t;
 
-	t = TempF(t);
+	t = TempF(tc);
 
 	if ((t < 80.0) || (h < 40.0))
-		return t;
+		return tc;
 	else
-		return (c1 + (c2 * t) + (c3 * h) + (c4 * t * h) + (c5 * t * t) + (c6 * h * h) + (c7 * t * t * h) + (c8 * t * h * h) + (c9 * t * t * h * h));
+		return TempC((c1 + (c2 * t) + (c3 * h) + (c4 * t * h) + (c5 * t * t) + (c6 * h * h) + (c7 * t * t * h) + (c8 * t * h * h) + (c9 * t * t * h * h)));
 }
 

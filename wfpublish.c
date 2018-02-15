@@ -131,6 +131,8 @@ int main (int argc, char **argv)
 	}
 
 	memset(&wd, 0, sizeof(weather_data_t));
+	wd.temperature_high = -100;
+	wd.temperature_low = 150;
 
 	read_config();
 
@@ -287,11 +289,14 @@ static void wfp_sky_parse(cJSON *sky) {
 		/* Track maximum gust over 10 intervals */
 		if (interval == 10) {
 			SETWD(ob, wd.gustspeed, 6); // m/s
+			wd.gustdirection = wd.winddirection;
 			interval = 0;
 		} else {
 			tmp = cJSON_GetArrayItem(ob, 6);
-			if (tmp->valuedouble > wd.gustspeed)
+			if (tmp->valuedouble > wd.gustspeed) {
 				wd.gustspeed = tmp->valuedouble;
+				wd.gustdirection = wd.winddirection;
+			}
 		}
 
 		/* Track rainfall over time */
