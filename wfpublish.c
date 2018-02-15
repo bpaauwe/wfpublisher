@@ -191,25 +191,25 @@ static int wf_message_parse(char *msg) {
 	type = cJSON_GetObjectItemCaseSensitive(msg_json, "type");
 	if (cJSON_IsString(type) && (type->valuestring != NULL)) {
 		if (strcmp(type->valuestring, "obs_air") == 0) {
-			printf("-> Air packet\n");
+			if (verbose) printf("-> Air packet\n");
 			wfp_air_parse(msg_json);
 			status |= 0x01;
 		} else if (strcmp(type->valuestring, "obs_sky") == 0) {
-			printf("-> Sky packet\n");
+			if (verbose) printf("-> Sky packet\n");
 			wfp_sky_parse(msg_json);
 			status |= 0x02;
 		} else if (strcmp(type->valuestring, "rapid_wind") == 0) {
-			printf("-> Rapid Wind packet\n");
+			if (verbose) printf("-> Rapid Wind packet\n");
 		} else if (strcmp(type->valuestring, "evt_strike") == 0) {
-			printf("-> Lightning strike packet\n");
+			if (verbose) printf("-> Lightning strike packet\n");
 		} else if (strcmp(type->valuestring, "evt_precip") == 0) {
-			printf("-> Rain start packet\n");
+			if (verbose) printf("-> Rain start packet\n");
 		} else if (strcmp(type->valuestring, "device_status") == 0) {
-			printf("-> Device status packet\n");
+			if (verbose) printf("-> Device status packet\n");
 		} else if (strcmp(type->valuestring, "hub_status") == 0) {
-			printf("-> Hub status packet\n");
+			if (verbose) printf("-> Hub status packet\n");
 		} else {
-			printf("-> Unknown packet type: %s\n", type->valuestring);
+			if (verbose) printf("-> Unknown packet type: %s\n", type->valuestring);
 		}
 
 		//printf("%s\n", cJSON_Print(msg_json));
@@ -240,10 +240,8 @@ static void wfp_air_parse(cJSON *air) {
 	obs = cJSON_GetObjectItemCaseSensitive(air, "obs");
 	for (i = 0 ; i < cJSON_GetArraySize(obs) ; i++) {
 		ob = cJSON_GetArrayItem(obs, i);
-		printf("At index %d - Found array with %d items\n", i, cJSON_GetArraySize(ob));
 
 		tmp = cJSON_GetArrayItem(ob, 0);
-		printf("time = %d\n", tmp->valueint);
 
 		SETWD(ob, wd.pressure, 1);		// millibars
 		SETWD(ob, wd.temperature, 2)	// Celsius
@@ -272,10 +270,8 @@ static void wfp_sky_parse(cJSON *sky) {
 	obs = cJSON_GetObjectItemCaseSensitive(sky, "obs");
 	for (i = 0 ; i < cJSON_GetArraySize(obs) ; i++) {
 		ob = cJSON_GetArrayItem(obs, i);
-		printf("At index %d - Found array with %d items\n", i, cJSON_GetArraySize(ob));
 
 		tmp = cJSON_GetArrayItem(ob, 0);
-		printf("time = %d\n", tmp->valueint);
 
 		SETWD(ob, wd.illumination, 1);
 		SETWI(ob, wd.uv, 2);
@@ -369,7 +365,6 @@ static void read_config(void) {
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "host");
 			s->cfg.host = strdup(type->valuestring);
-			printf("At index %d - Found  %s", i, type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "name");
 			s->cfg.name = strdup(type->valuestring);
@@ -388,6 +383,8 @@ static void read_config(void) {
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled");
 			s->enabled = type->valueint;
+
+			printf("At index %d - Found  %s (%s)", i, s->service, s->cfg.host);
 			printf("  enabled[%d]=%d\n", s->index, s->enabled);
 
 			/*
@@ -448,8 +445,9 @@ static void *publish(void *args)
 
 	while (1) {
 		for (sitr = sinfo; sitr != NULL; sitr = sitr->next) {
-			printf("%s is %s\n", sitr->cfg.host,
-					(sitr->enabled ? "enabled" : "disabled"));
+			if (verbose)
+				printf("%s is %s\n", sitr->service,
+						(sitr->enabled ? "enabled" : "disabled"));
 			if (sitr->enabled) {
 				if (debug)
 					printf("Sending weather data to service %s\n",
