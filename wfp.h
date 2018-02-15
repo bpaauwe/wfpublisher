@@ -90,15 +90,6 @@ struct service_info {
 	struct publisher_funcs funcs;
 };
 
-#define LOCAL         0
-#define WUNDERGROUND  1
-#define WEATHERBUG    2
-#define CWOP          3
-#define PWS           4
-#define DB_MYSQL      5
-#define MQTT          6
-#define SERVICE_END   7
-#define for_each_service(s) for((s) = LOCAL; (s) < SERVICE_END; (s)++)
 
 /*
  * Provide a name for the database fields. This is used to access the
