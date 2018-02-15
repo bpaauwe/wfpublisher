@@ -72,9 +72,8 @@ int mqtt_init(void)
 	return 0;
 }
 
-void *mqtt_publish(void *data)
+void *mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
 {
-	weather_data_t *wd = (weather_data_t *)data;
 	char buf[20];
 	int ret;
 

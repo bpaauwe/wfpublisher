@@ -35,7 +35,6 @@
 #include "wfp.h"
 
 extern char *time_stamp(int gmt, int mode);
-extern struct service_info sinfo[6];
 extern double TempF(double c);
 extern double MS2MPH(double ms);
 extern double mb2in(double mb);
@@ -51,9 +50,8 @@ static int connect_to_database(MYSQL *sql, char *db_host, char *db_name,
 /*
  * Store data in a MYSQL (or compatible) database
  */
-void *send_to_db(void *data)
+void *send_to_db(struct cfg_info *cfg, weather_data_t *wd)
 {
-	weather_data_t *wd = (weather_data_t *)data;
 	struct timeval start, end;
 	char *ts_start, *ts_end;
 	char *query;
@@ -64,7 +62,7 @@ void *send_to_db(void *data)
 
 	if (verbose || debug) {
 		ts_start = time_stamp(0, 1);
-		fprintf(stderr, "%s: Begin database update to %s\n", ts_start, sinfo[0].cfg.host);
+		fprintf(stderr, "%s: Begin database update to %s\n", ts_start, cfg->host);
 		free(ts_start);
 	}
 
@@ -74,8 +72,7 @@ void *send_to_db(void *data)
 		goto end;
 	}
 
-	ret = connect_to_database(sql, sinfo[DB_MYSQL].cfg.host, sinfo[DB_MYSQL].cfg.extra,
-			sinfo[DB_MYSQL].cfg.name, sinfo[DB_MYSQL].cfg.pass);
+	ret = connect_to_database(sql, cfg->host, cfg->extra, cfg->name, cfg->pass);
 	if (!ret)
 		goto end;
 
@@ -116,7 +113,7 @@ void *send_to_db(void *data)
 
 end:
 	mysql_close(sql);
-	free(data);
+	free(wd);
 
 	gettimeofday(&end, NULL);
 	if (verbose || debug) {

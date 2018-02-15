@@ -32,13 +32,13 @@
 #include <stdbool.h>
 #include "wfp.h"
 
-extern void *send_to_wunderground(void *data);
-extern void *send_to_weatherbug(void *data);
-extern void *send_to_cwop(void *data);
-extern void *send_to_pws(void *data);
-extern void *send_to_log(void *data);
-extern void *send_to_db(void *data);
-extern void *mqtt_publish(void *data);
+extern void *send_to_wunderground(struct cfg_info *cfg, weather_data_t *data);
+extern void *send_to_weatherbug(struct cfg_info *cfg, weather_data_t *data);
+extern void *send_to_cwop(struct cfg_info *cfg, weather_data_t *data);
+extern void *send_to_pws(struct cfg_info *cfg, weather_data_t *data);
+extern void *send_to_log(struct cfg_info *cfg, weather_data_t *data);
+extern void *send_to_db(struct cfg_info *cfg, weather_data_t *data);
+extern void *mqtt_publish(struct cfg_info *cfg, weather_data_t *data);
 
 extern int debug;
 extern int verbose;
@@ -46,7 +46,7 @@ extern int verbose;
 extern char *resolve_host(char *host);
 extern char *resolve_host_ip6(char *host);
 
-static void *(*send_to_table[7])(void *data) = {
+static void *(*send_to_table[7])(struct cfg_info *cfg, weather_data_t *data) = {
 	send_to_log,
 	send_to_wunderground,
 	send_to_weatherbug,
@@ -56,12 +56,32 @@ static void *(*send_to_table[7])(void *data) = {
 	mqtt_publish,
 };
 
+struct thread_info {
+	struct service_info *sinfo;
+	weather_data_t *data;
+};
+
 static int send_count = 0;
+
+/*
+ * Helper function to call the publisher update function
+ * from withing a separate thread.
+ */
+void *invoke_publisher(void *data)
+{
+	struct thread_info *t = (struct thread_info *)data;
+
+	(send_to_table[t->sinfo->index])(&t->sinfo->cfg, t->data);
+
+	free(t);
+	return NULL;
+}
 
 void send_to(struct service_info *sinfo, weather_data_t *wd)
 {
 	weather_data_t *wd_copy;
 	pthread_t w_thread;
+	struct thread_info *tinfo;
 	int err = 1;
 	char *ts;
 
@@ -69,6 +89,11 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 		goto end;
 
 	send_count++;
+
+	tinfo = malloc(sizeof(struct thread_info));
+	tinfo->sinfo = sinfo;
+	tinfo->data = wd;
+
 
 	/* Make a copy of the data so it doesn't get overwritten */
 	wd_copy = malloc(sizeof(weather_data_t));
@@ -78,10 +103,10 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 	}
 	memcpy(wd_copy, wd, sizeof(weather_data_t));
 
-	err = pthread_create(&w_thread, NULL, send_to_table[sinfo->index],
-			(void *)wd_copy);
+	err = pthread_create(&w_thread, NULL, invoke_publisher, (void *)tinfo);
 
 	if (err) {
+		free(tinfo);
 		free(wd_copy);
 		ts = time_stamp(0, 1);
 		fprintf(stderr, "%s: Failed to create thread for %s (cnt=%d): %s\n",

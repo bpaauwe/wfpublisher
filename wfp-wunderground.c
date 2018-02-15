@@ -33,7 +33,6 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
-extern struct service_info sinfo[6];
 extern double TempF(double c);
 extern double MS2MPH(double ms);
 extern double mb2in(double mb);
@@ -46,9 +45,8 @@ static char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
 /*
  * Weather Underground publisher.
  */
-void *send_to_wunderground(void *data)
+void *send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 {
-	weather_data_t *wd = (weather_data_t *)data;
 	char *str;
 	char *request;
 	struct timeval start, end;
@@ -84,8 +82,8 @@ void *send_to_wunderground(void *data)
 			"&humidity=%f"
 			"&dewptf=%f"
 			"&tempf=%f",
-			sinfo[WUNDERGROUND].cfg.name,
-			sinfo[WUNDERGROUND].cfg.pass,
+			cfg->name,
+			cfg->pass,
 			ts_start,
 			wd->pressure,
 			wd->rainfall_day,
@@ -97,7 +95,7 @@ void *send_to_wunderground(void *data)
 			wd->humidity,
 			wd->dewpoint,
 			wd->temperature
-		   );
+			);
 
 	if (verbose > 1)
 		fprintf(stderr, "wunderground: %s\n", request);
@@ -113,9 +111,9 @@ void *send_to_wunderground(void *data)
 
 	str = (char *)malloc(4096);
 
-	sprintf(str, tpl, request, sinfo[WUNDERGROUND].cfg.host, "acu-link");
+	sprintf(str, tpl, request, cfg->host, "acu-link");
 	if (!debug) {
-		send_url(sinfo[WUNDERGROUND].cfg.host, 80, str, NULL, 1);
+		send_url(cfg->host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}
@@ -123,7 +121,7 @@ void *send_to_wunderground(void *data)
 	free(ts_start);
 	free(str);
 	free(request);
-	free(data);
+	free(wd);
 
 	gettimeofday(&end, NULL);
 

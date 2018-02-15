@@ -33,7 +33,6 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
-extern struct service_info sinfo[6];
 extern double TempF(double c);
 extern double MS2MPH(double ms);
 extern double mb2in(double mb);
@@ -49,9 +48,8 @@ static int count = 0;
 /*
  * PWS Weather publisher
  */
-void *send_to_pws(void *data)
+void *send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
 {
-	weather_data_t *wd = (weather_data_t *)data;
 	char *str;
 	char *request;
 	struct timeval start, end;
@@ -76,13 +74,13 @@ void *send_to_pws(void *data)
 		ws.rainfall_month = wd->rainfall_month;
 		ws.rainfall_year  = wd->rainfall_year;
 		count++;
-		free(data);
+		free(wd);
 		goto out;
 	}
 
 	if (count == 0) {
 		/* No data collected yet */
-		free(data);
+		free(wd);
 		goto out;
 	}
 
@@ -115,8 +113,8 @@ void *send_to_pws(void *data)
 			"&UV=%.2f"
 			"&softwaretype=ACU-LINK"
 			"&action=updateraw",
-			sinfo[PWS].cfg.name,
-			sinfo[PWS].cfg.pass,
+			cfg->name,
+			cfg->pass,
 			ts_start,
 			mb2in(ws.pressure / count),
 			(ws.rainfall_day),
@@ -148,9 +146,9 @@ void *send_to_pws(void *data)
 	str = (char *)malloc(4096);
 
 
-	sprintf(str, tpl, request, sinfo[PWS].cfg.host, "acu-link");
+	sprintf(str, tpl, request, cfg->host, "acu-link");
 	if (!debug) {
-		send_url(sinfo[PWS].cfg.host, 80, str, NULL, 1);
+		send_url(cfg->host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}
@@ -158,7 +156,7 @@ void *send_to_pws(void *data)
 	free(ts_start);
 	free(str);
 	free(request);
-	free(data);
+	free(wd);
 
 	count = 0;
 	memset(&ws, 0, sizeof(weather_data_t));

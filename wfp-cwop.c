@@ -34,7 +34,6 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
-extern struct service_info sinfo[6];
 extern double TempF(double c);
 extern double MS2MPH(double ms);
 extern double mb2in(double mb);
@@ -55,9 +54,8 @@ static int count = 0;
  * minimum of 10 minutes.  This will batch up the request
  * and send 'average' data at 10 minute intervals.
  */
-void *send_to_cwop(void *data)
+void *send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 {
-	weather_data_t *wd = (weather_data_t *)data;
 	char *request;
 	struct timeval start, end;
 	char *ts_start, *ts_end;
@@ -125,9 +123,9 @@ void *send_to_cwop(void *data)
 			"b%05d"  /* barometric pressure in tenths of millibars (uncorrected)*/
 			"400\r\n",  /* hardware type */
 
-			sinfo[CWOP].cfg.name,
+			cfg->name,
 			gm->tm_mday, gm->tm_hour, gm->tm_min,
-			sinfo[CWOP].cfg.location_lat, sinfo[CWOP].cfg.location_long,
+			cfg->location_lat, cfg->location_long,
 			(int)round(ws.winddirection / count),
 			(int)round(ws.windspeed / count),
 			(int)round(ws.gustspeed),
@@ -142,12 +140,12 @@ void *send_to_cwop(void *data)
 		fprintf(stderr, "CWOP: %s\n", request);
 
 
-	sprintf(ident, "user %s pass -1 vers linux-acu-link 1.00\r\n", sinfo[CWOP].cfg.name);
-	send_url(sinfo[CWOP].cfg.host, 14580, request, ident, 0);
+	sprintf(ident, "user %s pass -1 vers linux-acu-link 1.00\r\n", cfg->name);
+	send_url(cfg->host, 14580, request, ident, 0);
 
 	/* Open a socket and send the data */
 	free(request);
-	free(data);
+	free(wd);
 
 	/* Clear data */
 	count = 0;
