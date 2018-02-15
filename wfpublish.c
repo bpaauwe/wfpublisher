@@ -322,6 +322,8 @@ static void service_setup(struct service_info *s)
 		mqtt_setup(s);
 	else if (strcmp(s->service, "mysql") == 0)
 		mysql_setup(s);
+	else if (strcmp(s->service, "Display") == 0)
+		display_setup(s);
 	else
 		printf("Unknown publishing service %s\n", s->service);
 }
