@@ -46,16 +46,6 @@ extern int verbose;
 extern char *resolve_host(char *host);
 extern char *resolve_host_ip6(char *host);
 
-static void *(*send_to_table[7])(struct cfg_info *cfg, weather_data_t *data) = {
-	send_to_log,
-	send_to_wunderground,
-	send_to_weatherbug,
-	send_to_cwop,
-	send_to_pws,
-	send_to_db,
-	mqtt_publish,
-};
-
 struct thread_info {
 	struct service_info *sinfo;
 	weather_data_t *data;
@@ -71,7 +61,7 @@ void *invoke_publisher(void *data)
 {
 	struct thread_info *t = (struct thread_info *)data;
 
-	(send_to_table[t->sinfo->index])(&t->sinfo->cfg, t->data);
+	(t->sinfo->funcs.update)(&t->sinfo->cfg, t->data);
 
 	free(t);
 	return NULL;
