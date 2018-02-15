@@ -42,7 +42,6 @@ extern void *mqtt_publish(void *data);
 
 extern int debug;
 extern int verbose;
-extern struct service_info sinfo[7];
 
 extern char *resolve_host(char *host);
 extern char *resolve_host_ip6(char *host);
@@ -59,14 +58,14 @@ static void *(*send_to_table[7])(void *data) = {
 
 static int send_count = 0;
 
-void send_to(int service, weather_data_t *wd)
+void send_to(struct service_info *sinfo, weather_data_t *wd)
 {
 	weather_data_t *wd_copy;
 	pthread_t w_thread;
 	int err = 1;
 	char *ts;
 
-	if (service >= SERVICE_END)
+	if (sinfo == NULL)
 		goto end;
 
 	send_count++;
@@ -79,14 +78,14 @@ void send_to(int service, weather_data_t *wd)
 	}
 	memcpy(wd_copy, wd, sizeof(weather_data_t));
 
-	err = pthread_create(&w_thread, NULL, send_to_table[service],
+	err = pthread_create(&w_thread, NULL, send_to_table[sinfo->index],
 			(void *)wd_copy);
 
 	if (err) {
 		free(wd_copy);
 		ts = time_stamp(0, 1);
 		fprintf(stderr, "%s: Failed to create thread for %s (cnt=%d): %s\n",
-				ts, sinfo[service].cfg.name, send_count, strerror(err));
+				ts, sinfo->cfg.name, send_count, strerror(err));
 		free(ts);
 	}
 

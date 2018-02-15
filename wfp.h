@@ -41,6 +41,7 @@ struct service_info {
 	int enabled;
 	int index;
 	struct cfg_info cfg;
+	struct service_info *next;
 };
 
 #define LOCAL         0

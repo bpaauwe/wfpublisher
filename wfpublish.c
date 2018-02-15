@@ -60,7 +60,7 @@ static void wfp_sky_parse(cJSON *sky);
 static void read_config(void);
 static void *publish(void *args);
 
-extern void send_to(int service, weather_data_t *wd);
+extern void send_to(struct service_info *sinfo, weather_data_t *wd);
 extern void rainfall(double amount);
 extern void accumulate_rain(weather_data_t *wd, double rain);
 extern int mqtt_init(void);
@@ -75,7 +75,7 @@ int dont_send = 0;       /* send data to weather services */
 weather_data_t wd;
 int interval = 0;
 int status = 0;
-struct service_info sinfo[7];
+struct service_info *sinfo = NULL;
 
 int main (int argc, char **argv)
 {
@@ -309,7 +309,7 @@ static void read_config(void) {
 	cJSON *cfg;
 	const cJSON *type = NULL;
 	int i;
-	int index;
+	struct service_info *s;
 
 
 	printf("Reading configuration file.\n");
@@ -329,32 +329,36 @@ static void read_config(void) {
 		for (i = 0 ; i < cJSON_GetArraySize(services) ; i++) {
 			cfg = cJSON_GetArrayItem(services, i);
 
+			s = malloc(sizeof(struct service_info));
+
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "index");
-			index = type->valueint;
+			s->index = type->valueint;
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "host");
-			sinfo[index].cfg.host = strdup(type->valuestring);
+			s->cfg.host = strdup(type->valuestring);
 			printf("At index %d - Found  %s", i, type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "name");
-			sinfo[index].cfg.name = strdup(type->valuestring);
+			s->cfg.name = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "password");
-			sinfo[index].cfg.pass = strdup(type->valuestring);
+			s->cfg.pass = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "extra");
-			sinfo[index].cfg.extra = strdup(type->valuestring);
+			s->cfg.extra = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_lat");
-			sinfo[index].cfg.location_lat = strdup(type->valuestring);
+			s->cfg.location_lat = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long");
-			sinfo[index].cfg.location_long = strdup(type->valuestring);
+			s->cfg.location_long = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled");
-			sinfo[index].enabled = type->valueint;
-			printf("  enabled[%d]=%d\n", index, sinfo[index].enabled);
+			s->enabled = type->valueint;
+			printf("  enabled[%d]=%d\n", s->index, s->enabled);
 
+			s->next = sinfo;
+			sinfo = s;
 		}
 	}
 }
@@ -365,7 +369,7 @@ static void read_config(void) {
  */
 static void *publish(void *args)
 {
-	int weather_service;
+	struct service_info *sitr;
 
 	/* Wait until we've actually received some data */
 	while (status != (0x01 | 0x02)) {
@@ -374,14 +378,14 @@ static void *publish(void *args)
 	}
 
 	while (1) {
-		for_each_service(weather_service) {
-			printf("%s is %s\n", sinfo[weather_service].cfg.host,
-					(sinfo[weather_service].enabled ? "enabled" : "disabled"));
-			if (sinfo[weather_service].enabled) {
+		for (sitr = sinfo; sitr != NULL; sitr = sitr->next) {
+			printf("%s is %s\n", sitr->cfg.host,
+					(sitr->enabled ? "enabled" : "disabled"));
+			if (sitr->enabled) {
 				if (debug)
 					printf("Sending weather data to service %s\n",
-							sinfo[weather_service].cfg.host);
-				send_to(weather_service, &wd);
+							sitr->cfg.host);
+				send_to(sitr, &wd);
 			}
 		}
 
