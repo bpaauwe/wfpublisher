@@ -48,12 +48,14 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	char s_str[5];
 	char r_str[4];
 	char p_str[7];
+	char d_str[5];
 
 	/* Currently data is in metric format */
 	sprintf(t_str, "\370C");
 	sprintf(s_str, " m/s");
 	sprintf(r_str, " mm");
 	sprintf(p_str, " mb");
+	sprintf(d_str, " km");
 
 	/* Format the output to fit nicely on the display */
 	printf("Last Update: %s\n\n", wd->timestamp);
@@ -71,7 +73,7 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	printf("Gust speed:     %5.1f%s     Gust dir:   %5.0f\370\n\n",
 			wd->gustspeed, s_str, wd->gustdirection);
 
-	printf("Illumination:   %5.1f Lux     Solar Rad:  %5.01f W/m^2  UV index:   %5.0f\n\n",
+	printf("Illumination:   %5.1f Lux     Solar Rad:  %5.01f W/m^2   UV index:   %5.0f\n\n",
 			wd->illumination, wd->solar, wd->uv);
 
 	printf("Rain:           %5.1f%s      Daily rain: %5.1f%s\n",
@@ -81,8 +83,8 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	printf("Day rain:       %5.1f%s      Month rain: %5.1f%s      Year rain:  %5.1f%s\n\n",
 			wd->rainfall_day, r_str, wd->rainfall_month, r_str, wd->rainfall_year, r_str);
 
-	printf("Pressure trend: %5.1f         Lighting:   %5d\n",
-			wd->trend, wd->strikes);
+	printf("Pressure trend: %5.1f         Lighting:   %5d         Distance:   %5.1f%s\n",
+			wd->trend, wd->strikes, wd->distance, d_str);
 
 	printf("----------------------------------------------------------------------------------\n");
 
