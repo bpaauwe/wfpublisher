@@ -333,23 +333,23 @@ static void read_config(void) {
 			index = type->valueint;
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "host");
-			sinfo[index].host = strdup(type->valuestring);
+			sinfo[index].cfg.host = strdup(type->valuestring);
 			printf("At index %d - Found  %s", i, type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "name");
-			sinfo[index].name = strdup(type->valuestring);
+			sinfo[index].cfg.name = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "password");
-			sinfo[index].pass = strdup(type->valuestring);
+			sinfo[index].cfg.pass = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "extra");
-			sinfo[index].extra = strdup(type->valuestring);
+			sinfo[index].cfg.extra = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_lat");
-			sinfo[index].location_lat = strdup(type->valuestring);
+			sinfo[index].cfg.location_lat = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long");
-			sinfo[index].location_long = strdup(type->valuestring);
+			sinfo[index].cfg.location_long = strdup(type->valuestring);
 
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled");
 			sinfo[index].enabled = type->valueint;
@@ -375,12 +375,12 @@ static void *publish(void *args)
 
 	while (1) {
 		for_each_service(weather_service) {
-			printf("%s is %s\n", sinfo[weather_service].host,
+			printf("%s is %s\n", sinfo[weather_service].cfg.host,
 					(sinfo[weather_service].enabled ? "enabled" : "disabled"));
 			if (sinfo[weather_service].enabled) {
 				if (debug)
 					printf("Sending weather data to service %s\n",
-							sinfo[weather_service].host);
+							sinfo[weather_service].cfg.host);
 				send_to(weather_service, &wd);
 			}
 		}

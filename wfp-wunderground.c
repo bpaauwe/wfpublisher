@@ -84,8 +84,8 @@ void *send_to_wunderground(void *data)
 			"&humidity=%f"
 			"&dewptf=%f"
 			"&tempf=%f",
-			sinfo[WUNDERGROUND].name,
-			sinfo[WUNDERGROUND].pass,
+			sinfo[WUNDERGROUND].cfg.name,
+			sinfo[WUNDERGROUND].cfg.pass,
 			ts_start,
 			wd->pressure,
 			wd->rainfall_day,
@@ -113,9 +113,9 @@ void *send_to_wunderground(void *data)
 
 	str = (char *)malloc(4096);
 
-	sprintf(str, tpl, request, sinfo[WUNDERGROUND].host, "acu-link");
+	sprintf(str, tpl, request, sinfo[WUNDERGROUND].cfg.host, "acu-link");
 	if (!debug) {
-		send_url(sinfo[WUNDERGROUND].host, 80, str, NULL, 1);
+		send_url(sinfo[WUNDERGROUND].cfg.host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}

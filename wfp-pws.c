@@ -115,8 +115,8 @@ void *send_to_pws(void *data)
 			"&UV=%.2f"
 			"&softwaretype=ACU-LINK"
 			"&action=updateraw",
-			sinfo[PWS].name,
-			sinfo[PWS].pass,
+			sinfo[PWS].cfg.name,
+			sinfo[PWS].cfg.pass,
 			ts_start,
 			mb2in(ws.pressure / count),
 			(ws.rainfall_day),
@@ -148,9 +148,9 @@ void *send_to_pws(void *data)
 	str = (char *)malloc(4096);
 
 
-	sprintf(str, tpl, request, sinfo[PWS].host, "acu-link");
+	sprintf(str, tpl, request, sinfo[PWS].cfg.host, "acu-link");
 	if (!debug) {
-		send_url(sinfo[PWS].host, 80, str, NULL, 1);
+		send_url(sinfo[PWS].cfg.host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}

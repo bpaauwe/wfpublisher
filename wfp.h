@@ -28,15 +28,19 @@
  * read from a configuration file by design.
  */
 
-struct service_info {
+struct cfg_info {
 	char *host;
 	char *name;
 	char *pass;
 	char *extra;
 	char *location_lat;
 	char *location_long;
+};
+
+struct service_info {
 	int enabled;
 	int index;
+	struct cfg_info cfg;
 };
 
 #define LOCAL         0

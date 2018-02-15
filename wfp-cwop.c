@@ -125,9 +125,9 @@ void *send_to_cwop(void *data)
 			"b%05d"  /* barometric pressure in tenths of millibars (uncorrected)*/
 			"400\r\n",  /* hardware type */
 
-			sinfo[CWOP].name,
+			sinfo[CWOP].cfg.name,
 			gm->tm_mday, gm->tm_hour, gm->tm_min,
-			sinfo[CWOP].location_lat, sinfo[CWOP].location_long,
+			sinfo[CWOP].cfg.location_lat, sinfo[CWOP].cfg.location_long,
 			(int)round(ws.winddirection / count),
 			(int)round(ws.windspeed / count),
 			(int)round(ws.gustspeed),
@@ -142,8 +142,8 @@ void *send_to_cwop(void *data)
 		fprintf(stderr, "CWOP: %s\n", request);
 
 
-	sprintf(ident, "user %s pass -1 vers linux-acu-link 1.00\r\n", sinfo[CWOP].name);
-	send_url(sinfo[CWOP].host, 14580, request, ident, 0);
+	sprintf(ident, "user %s pass -1 vers linux-acu-link 1.00\r\n", sinfo[CWOP].cfg.name);
+	send_url(sinfo[CWOP].cfg.host, 14580, request, ident, 0);
 
 	/* Open a socket and send the data */
 	free(request);

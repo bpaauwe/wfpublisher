@@ -86,7 +86,7 @@ void send_to(int service, weather_data_t *wd)
 		free(wd_copy);
 		ts = time_stamp(0, 1);
 		fprintf(stderr, "%s: Failed to create thread for %s (cnt=%d): %s\n",
-				ts, sinfo[service].name, send_count, strerror(err));
+				ts, sinfo[service].cfg.name, send_count, strerror(err));
 		free(ts);
 	}
 

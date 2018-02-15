@@ -58,15 +58,15 @@ void *send_to_log(void *data)
 
 	gettimeofday(&start, NULL);
 
-	fp = fopen(sinfo[0].host, "a");
+	fp = fopen(sinfo[0].cfg.host, "a");
 	if (fp == NULL) {
-		fprintf(stderr, "Failed to open file %s for writing\n", sinfo[0].host);
+		fprintf(stderr, "Failed to open file %s for writing\n", sinfo[0].cfg.host);
 		goto end;
 	}
 
 	if (verbose || debug) {
 		ts_start = time_stamp(0, 1);
-		fprintf(stderr, "%s: Begin logging to %s\n", ts_start, sinfo[0].host);
+		fprintf(stderr, "%s: Begin logging to %s\n", ts_start, sinfo[0].cfg.host);
 		free(ts_start);
 	}
 

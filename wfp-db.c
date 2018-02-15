@@ -64,7 +64,7 @@ void *send_to_db(void *data)
 
 	if (verbose || debug) {
 		ts_start = time_stamp(0, 1);
-		fprintf(stderr, "%s: Begin database update to %s\n", ts_start, sinfo[0].host);
+		fprintf(stderr, "%s: Begin database update to %s\n", ts_start, sinfo[0].cfg.host);
 		free(ts_start);
 	}
 
@@ -74,8 +74,8 @@ void *send_to_db(void *data)
 		goto end;
 	}
 
-	ret = connect_to_database(sql, sinfo[DB_MYSQL].host, sinfo[DB_MYSQL].extra,
-			sinfo[DB_MYSQL].name, sinfo[DB_MYSQL].pass);
+	ret = connect_to_database(sql, sinfo[DB_MYSQL].cfg.host, sinfo[DB_MYSQL].cfg.extra,
+			sinfo[DB_MYSQL].cfg.name, sinfo[DB_MYSQL].cfg.pass);
 	if (!ret)
 		goto end;
 

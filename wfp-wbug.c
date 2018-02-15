@@ -114,9 +114,9 @@ void *send_to_weatherbug(void *data)
 			"&tempf=%f"
 			"&monthlyrainin=%.2f"
 			"&Yearlyrainin=%.2f",
-			sinfo[WEATHERBUG].name,
-			sinfo[WEATHERBUG].pass,
-			sinfo[WEATHERBUG].extra,
+			sinfo[WEATHERBUG].cfg.name,
+			sinfo[WEATHERBUG].cfg.pass,
+			sinfo[WEATHERBUG].cfg.extra,
 			ts_start,
 			(ws.pressure / count),
 			(ws.rainfall_day),
@@ -147,9 +147,9 @@ void *send_to_weatherbug(void *data)
 	str = (char *)malloc(4096);
 
 
-	sprintf(str, tpl, request, sinfo[WEATHERBUG].host, "acu-link");
+	sprintf(str, tpl, request, sinfo[WEATHERBUG].cfg.host, "acu-link");
 	if (!debug) {
-		send_url(sinfo[WEATHERBUG].host, 80, str, NULL, 1);
+		send_url(sinfo[WEATHERBUG].cfg.host, 80, str, NULL, 1);
 	} else {
 		send_url("www.bobshome.net", 80, str, NULL, 0);
 	}
