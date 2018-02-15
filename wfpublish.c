@@ -65,12 +65,6 @@ extern void rainfall(double amount);
 extern void accumulate_rain(weather_data_t *wd, double rain);
 extern int mqtt_init(void);
 extern void mqtt_disconnect(void);
-//extern double get_rain_hourly(void);
-//extern double get_rain_daily(void);
-//extern double get_rain_monthly(void);
-//extern double get_rain_yearly(void);
-//extern double get_rain_1hr(void);
-//extern double get_rain_24hrs(void);
 
 /* Globals */
 MYSQL *sql = NULL;       /* Database handle */
@@ -82,12 +76,6 @@ weather_data_t wd;
 int interval = 0;
 int status = 0;
 struct service_info sinfo[7];
-
-bool skip_wu = false;
-bool skip_wb = false;
-bool skip_cw = false;
-bool skip_pws = false;
-bool skip_log = false;
 
 int main (int argc, char **argv)
 {
@@ -103,50 +91,38 @@ int main (int argc, char **argv)
 	if (argc > 1) {
 		for(i = 1; i < argc; i++) {
 			if (argv[i][0] == '-') { /* An option */
-				if (strcmp(&argv[i][1], "nowb") == 0) {
-					skip_wb = true;
-				} else if (strcmp(&argv[i][1], "nowu") == 0) {
-					skip_wu = true;
-				} else if (strcmp(&argv[i][1], "nocw") == 0) {
-					skip_cw = true;
-				} else if (strcmp(&argv[i][1], "nopws") == 0) {
-					skip_pws = true;
-				} else if (strcmp(&argv[i][1], "nolog") == 0) {
-					skip_log = true;
-				} else {
-					switch (argv[i][1]) {
-						case 't': /* testmode */
-							testmode = 1;
-							debug = 1; /* implies debug mode */
-							break;
-						case 'd': /* debug */
-							debug = 1;
-							break;
-						case 'v': /* verbose */
-							/* FIXME:
-							 * *   This should be rolled into debug, might
-							 * *   want to have different debug levels though
-							 * */
-							verbose = 1;
-							if (strcmp(argv[i], "vv") == 0)
-								verbose = 2;
-							if (strcmp(argv[i], "vvv") == 0)
-								verbose = 3;
-							break;
-						case 's':
-							dont_send = 1;
-							break;
-						default:
-							printf("usage: %s [-t] [-d]\n", argv[0]);
-							printf("        -t runs in test mode\n");
-							printf("        -s don't send to weather services\n");
-							printf("        -v verbose output\n");
-							printf("        -d turns on debugging\n");
-							printf("\n");
+				switch (argv[i][1]) {
+					case 't': /* testmode */
+						testmode = 1;
+						debug = 1; /* implies debug mode */
+						break;
+					case 'd': /* debug */
+						debug = 1;
+						break;
+					case 'v': /* verbose */
+						/* FIXME:
+						 * *   This should be rolled into debug, might
+						 * *   want to have different debug levels though
+						 * */
+						verbose = 1;
+						if (strcmp(argv[i], "vv") == 0)
+							verbose = 2;
+						if (strcmp(argv[i], "vvv") == 0)
+							verbose = 3;
+						break;
+					case 's':
+						dont_send = 1;
+						break;
+					default:
+						printf("usage: %s [-t] [-d]\n", argv[0]);
+						printf("        -t runs in test mode\n");
+						printf("        -s don't send to weather services\n");
+						printf("        -v verbose output\n");
+						printf("        -d turns on debugging\n");
+						printf("\n");
 
-							exit(0);
-							break;
-					}
+						exit(0);
+						break;
 				}
 			}
 		}
@@ -301,10 +277,8 @@ static void wfp_sky_parse(cJSON *sky) {
 		SETWI(ob, wd.uv, 2);
 		SETWD(ob, wd.rain, 3);     // over reporting interval
 		SETWD(ob, wd.windspeed, 5); // m/s
-		/* SETWD(ob, wd.gustspeed, 6); */ // m/s
 		SETWD(ob, wd.winddirection, 7);
 		SETWD(ob, wd.solar, 10);
-		//SETWD(ob, wd.daily_rain, 11);  // current day (null in UDP packets)
 
 		/* derrived values */
 		wd.windchill = calc_windchill(wd.temperature, wd.windspeed);
@@ -322,12 +296,6 @@ static void wfp_sky_parse(cJSON *sky) {
 
 		/* Track rainfall over time */
 		accumulate_rain(&wd, wd.rain);
-		//wd.rainfall_1hr = get_rain_hourly();    // current hour
-		//wd.rainfall_day = get_rain_daily();     // current day
-		//wd.rainfall_month = get_rain_monthly(); // current month
-		//wd.rainfall_year = get_rain_yearly();   // current year
-		//wd.rainfall_60min = get_rain_1hr();     // past 60 minutes
-		//wd.rainfall_24hr = get_rain_24hrs();    // past 24 hours
 
 	}
 }
