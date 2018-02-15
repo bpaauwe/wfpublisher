@@ -121,7 +121,6 @@ void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 	free(ts_start);
 	free(str);
 	free(request);
-	free(wd);
 
 	gettimeofday(&end, NULL);
 

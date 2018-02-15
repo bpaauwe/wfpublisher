@@ -237,13 +237,21 @@ static void wfp_air_parse(cJSON *air) {
 	cJSON *ob;
 	cJSON *tmp;
 	int i;
+	struct tm *lt;
 
 	/* this is a 2 dimensional array [[v,v,v,v,v,v,v]] */
 	obs = cJSON_GetObjectItemCaseSensitive(air, "obs");
 	for (i = 0 ; i < cJSON_GetArraySize(obs) ; i++) {
 		ob = cJSON_GetArrayItem(obs, i);
 
+		/* First item is a timestamp, lets use it for last update */
 		tmp = cJSON_GetArrayItem(ob, 0);
+		lt = localtime((long *)&tmp->valueint);
+		if (wd.timestamp == NULL)
+			wd.timestamp = (char *)malloc(25);
+		sprintf(wd.timestamp, "%4d-%02d-%02d %02d:%02d:%02d",
+				lt->tm_year + 1900, lt->tm_mon + 1, lt->tm_mday,
+				lt->tm_hour, lt->tm_min, lt->tm_sec);
 
 		SETWD(ob, wd.pressure, 1);		// millibars
 		SETWD(ob, wd.temperature, 2)	// Celsius

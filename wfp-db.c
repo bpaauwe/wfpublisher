@@ -113,7 +113,6 @@ void send_to_db(struct cfg_info *cfg, weather_data_t *wd)
 
 end:
 	mysql_close(sql);
-	free(wd);
 
 	gettimeofday(&end, NULL);
 	if (verbose || debug) {

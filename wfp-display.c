@@ -88,7 +88,6 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 
 	printf("----------------------------------------------------------------------------------\n");
 
-	free(wd);
 	pthread_exit(NULL);
 	return;
 }

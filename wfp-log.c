@@ -89,7 +89,6 @@ void send_to_log(struct cfg_info *cfg, weather_data_t *wd)
 	fclose (fp);
 
 end:
-	free(wd);
 
 	gettimeofday(&end, NULL);
 	if (verbose || debug) {

@@ -73,15 +73,11 @@ void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 		ws.rainfall_month = wd->rainfall_month;
 		ws.rainfall_year  = wd->rainfall_year;
 		count++;
-		free(wd);
 		goto out;
 	}
 
-	if (count == 0) {
-		/* No data collected yet */
-		free(wd);
+	if (count == 0)
 		goto out;
-	}
 
 	gettimeofday(&start, NULL);
 
@@ -155,7 +151,6 @@ void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 	free(ts_start);
 	free(str);
 	free(request);
-	free(wd);
 
 	count = 0;
 	memset(&ws, 0, sizeof(weather_data_t));

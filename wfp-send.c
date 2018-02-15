@@ -63,6 +63,8 @@ void *invoke_publisher(void *data)
 
 	(t->sinfo->funcs.update)(&t->sinfo->cfg, t->data);
 
+	free(t->data->timestamp);
+	free(t->data);
 	free(t);
 	return NULL;
 }
@@ -87,6 +89,8 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 		return;
 	}
 	memcpy(wd_copy, wd, sizeof(weather_data_t));
+	if (wd->timestamp)
+		wd_copy->timestamp = strdup(wd->timestamp);
 
 	tinfo = malloc(sizeof(struct thread_info));
 	tinfo->sinfo = sinfo;

@@ -79,7 +79,6 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 		ws.rainfall_1hr = wd->rainfall_1hr;
 		ws.rainfall_day = wd->rainfall_day;
 		count++;
-		free(wd);
 		pthread_exit(NULL);
 		return;
 	}
@@ -87,7 +86,6 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 	/* ignore case where first data comes right on 10 minute */
 	if (count == 0) {
 		printf("** Skipping CWOP send, count == 0\n");
-		free(wd);
 		pthread_exit(NULL);
 		return;
 	}
@@ -145,7 +143,6 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 
 	/* Open a socket and send the data */
 	free(request);
-	free(wd);
 
 	/* Clear data */
 	count = 0;
