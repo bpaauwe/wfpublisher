@@ -46,7 +46,7 @@ extern int verbose;
  *
  * Log the weather data to a local file on the filesystem
  */
-void *send_to_log(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_log(struct cfg_info *cfg, weather_data_t *wd)
 {
 	struct timeval start, end;
 	char *ts_start, *ts_end;
@@ -105,5 +105,18 @@ end:
 	}
 
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
+
+static const struct publisher_funcs log_funcs = {
+	.init = NULL,
+	.update = send_to_log,
+	.cleanup = NULL
+};
+
+void log_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = log_funcs;
+	return;
+}
+

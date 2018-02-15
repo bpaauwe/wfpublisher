@@ -90,11 +90,6 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 
 	send_count++;
 
-	tinfo = malloc(sizeof(struct thread_info));
-	tinfo->sinfo = sinfo;
-	tinfo->data = wd;
-
-
 	/* Make a copy of the data so it doesn't get overwritten */
 	wd_copy = malloc(sizeof(weather_data_t));
 	if (!wd_copy) {
@@ -102,6 +97,10 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 		return;
 	}
 	memcpy(wd_copy, wd, sizeof(weather_data_t));
+
+	tinfo = malloc(sizeof(struct thread_info));
+	tinfo->sinfo = sinfo;
+	tinfo->data = wd_copy;
 
 	err = pthread_create(&w_thread, NULL, invoke_publisher, (void *)tinfo);
 

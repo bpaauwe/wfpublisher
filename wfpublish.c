@@ -59,6 +59,8 @@ static void wfp_air_parse(cJSON *air);
 static void wfp_sky_parse(cJSON *sky);
 static void read_config(void);
 static void *publish(void *args);
+static void initialize_publishers(void);
+static void cleanup_publishers(void);
 
 extern void send_to(struct service_info *sinfo, weather_data_t *wd);
 extern void rainfall(double amount);
@@ -131,7 +133,8 @@ int main (int argc, char **argv)
 	memset(&wd, 0, sizeof(weather_data_t));
 
 	read_config();
-	mqtt_init();
+
+	initialize_publishers();
 
 	/*
 	 * Start a thread to publish the data. The thread will wake up
@@ -164,8 +167,9 @@ int main (int argc, char **argv)
 		//printf("recv: %s\n", line);
 	}
 
-	mqtt_disconnect();
 	close(sock);
+
+	cleanup_publishers();
 
 	exit(0);
 }
@@ -300,6 +304,32 @@ static void wfp_sky_parse(cJSON *sky) {
 	}
 }
 
+/*
+ * Given a publishing service, fill in the function pointer
+ * table for the init, update, cleanup functions.
+ *
+ * This will need to be updated for every new service.
+ */
+static void service_setup(struct service_info *s)
+{
+	if (strcmp(s->service, "logfile") == 0)
+		log_setup(s);
+	else if (strcmp(s->service, "WeatherUnderground") == 0)
+		wunderground_setup(s);
+	else if (strcmp(s->service, "WeatherBug") == 0)
+		wbug_setup(s);
+	else if (strcmp(s->service, "PersonalWeatherStation") == 0)
+		pws_setup(s);
+	else if (strcmp(s->service, "CWOP") == 0)
+		cwop_setup(s);
+	else if (strcmp(s->service, "MQTT") == 0)
+		mqtt_setup(s);
+	else if (strcmp(s->service, "mysql") == 0)
+		mysql_setup(s);
+	else
+		printf("Unknown publishing service %s\n", s->service);
+}
+
 static void read_config(void) {
 	FILE *fp;
 	char *json;
@@ -331,6 +361,9 @@ static void read_config(void) {
 
 			s = malloc(sizeof(struct service_info));
 
+			type = cJSON_GetObjectItemCaseSensitive(cfg, "service");
+			s->service = strdup(type->valuestring);
+
 			type = cJSON_GetObjectItemCaseSensitive(cfg, "index");
 			s->index = type->valueint;
 
@@ -357,12 +390,48 @@ static void read_config(void) {
 			s->enabled = type->valueint;
 			printf("  enabled[%d]=%d\n", s->index, s->enabled);
 
+			/*
+			 * Is there some way to hook up s-funcs dynamically here?
+			 * I don't want to have a static lookup that needs to be
+			 * modified to match each publisher.
+			 *
+			 * Making each publisher a dynamic library and loading
+			 * them at runtime works, but that seems like overkill as
+			 * we then need to have a bunch of .so files sitting around
+			 * with the executable for it to functon properly.
+			 */
+			service_setup(s);
+
 			s->next = sinfo;
 			sinfo = s;
 		}
 	}
 }
 
+/*
+ * initialize_publishers
+ *
+ * Call the publisher's initialization function
+ */
+static void initialize_publishers(void)
+{
+	struct service_info *sitr;
+
+	for (sitr = sinfo; sitr != NULL; sitr = sitr->next) {
+		if (sitr->funcs.init)
+			(sitr->funcs.init)(&sitr->cfg, debug);
+	}
+}
+
+static void cleanup_publishers(void)
+{
+	struct service_info *sitr;
+
+	for (sitr = sinfo; sitr != NULL; sitr = sitr->next) {
+		if (sitr->funcs.cleanup)
+			(sitr->funcs.cleanup)();
+	}
+}
 
 /*
  * Publish the weather data to the various services

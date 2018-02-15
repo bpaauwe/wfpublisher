@@ -50,7 +50,7 @@ static int connect_to_database(MYSQL *sql, char *db_host, char *db_name,
 /*
  * Store data in a MYSQL (or compatible) database
  */
-void *send_to_db(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_db(struct cfg_info *cfg, weather_data_t *wd)
 {
 	struct timeval start, end;
 	char *ts_start, *ts_end;
@@ -129,7 +129,7 @@ end:
 	}
 
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
 
 /*
@@ -260,3 +260,16 @@ void rainfall_data_get(MYSQL *sql, double *minute, double *hour, double *day,
 		mysql_free_result(result);
 	}
 }
+
+static const struct publisher_funcs mysql_funcs = {
+	.init = NULL,
+	.update = send_to_db,
+	.cleanup = NULL
+};
+
+void mysql_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = mysql_funcs;
+	return;
+}
+

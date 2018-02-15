@@ -24,38 +24,6 @@
 #define _WFP_H_
 
 /*
- * Configuration information below.  It is built into the code rather than
- * read from a configuration file by design.
- */
-
-struct cfg_info {
-	char *host;
-	char *name;
-	char *pass;
-	char *extra;
-	char *location_lat;
-	char *location_long;
-};
-
-struct service_info {
-	int enabled;
-	int index;
-	struct cfg_info cfg;
-	struct service_info *next;
-};
-
-#define LOCAL         0
-#define WUNDERGROUND  1
-#define WEATHERBUG    2
-#define CWOP          3
-#define PWS           4
-#define DB_MYSQL      5
-#define MQTT          6
-#define SERVICE_END   7
-#define for_each_service(s) for((s) = LOCAL; (s) < SERVICE_END; (s)++)
-
-
-/*
  * This structure holds a data record. It is built from the current
  * database record, calculated values, and the data collected from the bridge.
  */
@@ -91,6 +59,47 @@ typedef struct _wd {
 	unsigned long valid;
 } weather_data_t;
 
+
+/*
+ * Configuration information below.  It is built into the code rather than
+ * read from a configuration file by design.
+ */
+
+
+struct cfg_info {
+	char *host;
+	char *name;
+	char *pass;
+	char *extra;
+	char *location_lat;
+	char *location_long;
+};
+
+struct publisher_funcs {
+	int (*init)(struct cfg_info *info, int debug);
+	void (*update)(struct cfg_info *info, weather_data_t *data);
+	void (*cleanup)(void);
+};
+
+struct service_info {
+	char *service;
+	int enabled;
+	int index;
+	struct cfg_info cfg;
+	struct service_info *next;
+	struct publisher_funcs funcs;
+};
+
+#define LOCAL         0
+#define WUNDERGROUND  1
+#define WEATHERBUG    2
+#define CWOP          3
+#define PWS           4
+#define DB_MYSQL      5
+#define MQTT          6
+#define SERVICE_END   7
+#define for_each_service(s) for((s) = LOCAL; (s) < SERVICE_END; (s)++)
+
 /*
  * Provide a name for the database fields. This is used to access the
  * row array returned by the database query.  Makes the code a bit easier
@@ -119,6 +128,15 @@ enum db_fields {
 	rainfall_month,
 	rainfall_year
 };
+
+/* service setup */
+extern void log_setup(struct service_info *s);
+extern void wunderground_setup(struct service_info *s);
+extern void wbug_setup(struct service_info *s);
+extern void pws_setup(struct service_info *s);
+extern void cwop_setup(struct service_info *s);
+extern void mqtt_setup(struct service_info *s);
+extern void mysql_setup(struct service_info *s);
 
 /* wfp-utils.c */
 extern double calc_heatindex(double, double);

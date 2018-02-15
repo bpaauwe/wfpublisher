@@ -35,19 +35,15 @@
 #include "wfp.h"
 #include <mosquitto.h>
 
-// Server connection parameters
-#define MQTT_HOSTNAME "home-ds1"
-#define MQTT_PORT 1883
-#define MQTT_TOPIC "test"
-
 extern double TempF(double c);
 extern double MS2MPH(double ms);
 extern double mb2in(double mb);
 
 struct mosquitto *mosq = NULL;
 
-int mqtt_init(void)
+int mqtt_init(struct cfg_info *cfg, int debug)
 {
+	int port;
 	int ret;
 
 	mosquitto_lib_init();
@@ -59,20 +55,21 @@ int mqtt_init(void)
 		return -1;
 	}
 
-	//mosquitto_username_pw_set (mosq, MQTT_USERNAME, MQTT_PASSWORD);
+	//mosquitto_username_pw_set (mosq, cfg->name, cfg->pass);
 
 	/* Connect to MQTT broker */
-	ret = mosquitto_connect(mosq, MQTT_HOSTNAME, MQTT_PORT, 0);
+	port = atoi(cfg->extra);
+	ret = mosquitto_connect(mosq, cfg->host, port, 0);
 	if (ret) {
 		fprintf (stderr, "Can't connect to Mosquitto broker %s\n",
-				MQTT_HOSTNAME);
+				cfg->host);
 		return -1;
 	}
 
 	return 0;
 }
 
-void *mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
+void mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
 {
 	char buf[20];
 	int ret;
@@ -108,7 +105,7 @@ void *mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
 	ret = mosquitto_publish(mosq, NULL, "home/climate/Rain", strlen(buf), buf, 0, false);
 
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
 
 void mqtt_disconnect(void)
@@ -117,6 +114,18 @@ void mqtt_disconnect(void)
 	mosquitto_destroy (mosq);
 	mosquitto_lib_cleanup();
 
+	return;
+}
+
+static const struct publisher_funcs mqtt_funcs = {
+	.init = mqtt_init,
+	.update = mqtt_publish,
+	.cleanup = mqtt_disconnect
+};
+
+void mqtt_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = mqtt_funcs;
 	return;
 }
 

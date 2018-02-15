@@ -54,7 +54,7 @@ static int count = 0;
  * minimum of 10 minutes.  This will batch up the request
  * and send 'average' data at 10 minute intervals.
  */
-void *send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 {
 	char *request;
 	struct timeval start, end;
@@ -81,7 +81,7 @@ void *send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 		count++;
 		free(wd);
 		pthread_exit(NULL);
-		return NULL;
+		return;
 	}
 
 	/* ignore case where first data comes right on 10 minute */
@@ -89,7 +89,7 @@ void *send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 		printf("** Skipping CWOP send, count == 0\n");
 		free(wd);
 		pthread_exit(NULL);
-		return NULL;
+		return;
 	}
 
 	gettimeofday(&start, NULL);
@@ -165,5 +165,18 @@ void *send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 	}
 
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
+
+static const struct publisher_funcs cwop_funcs = {
+	.init = NULL,
+	.update = send_to_cwop,
+	.cleanup = NULL
+};
+
+void cwop_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = cwop_funcs;
+	return;
+}
+

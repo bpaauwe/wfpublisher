@@ -47,7 +47,7 @@ static int count = 0;
 /*
  * WeatherBug publisher
  */
-void *send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 {
 	char *str;
 	char *request;
@@ -175,5 +175,18 @@ void *send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 
 out:
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
+
+static const struct publisher_funcs wbug_funcs = {
+	.init = NULL,
+	.update = send_to_weatherbug,
+	.cleanup = NULL
+};
+
+void wbug_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = wbug_funcs;
+	return;
+}
+

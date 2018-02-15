@@ -45,7 +45,7 @@ static char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
 /*
  * Weather Underground publisher.
  */
-void *send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 {
 	char *str;
 	char *request;
@@ -138,5 +138,18 @@ void *send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 	}
 
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
+
+static const struct publisher_funcs wunderground_funcs = {
+	.init = NULL,
+	.update = send_to_wunderground,
+	.cleanup = NULL
+};
+
+void wunderground_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = wunderground_funcs;
+	return;
+}
+

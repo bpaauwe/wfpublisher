@@ -48,7 +48,7 @@ static int count = 0;
 /*
  * PWS Weather publisher
  */
-void *send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
 {
 	char *str;
 	char *request;
@@ -176,5 +176,18 @@ void *send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
 
 out:
 	pthread_exit(NULL);
-	return NULL;
+	return;
 }
+
+static const struct publisher_funcs pws_funcs = {
+	.init = NULL,
+	.update = send_to_pws,
+	.cleanup = NULL
+};
+
+void pws_setup(struct service_info *sinfo)
+{
+	sinfo->funcs = pws_funcs;
+	return;
+}
+
