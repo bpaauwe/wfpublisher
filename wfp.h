@@ -128,6 +128,7 @@ extern void pws_setup(struct service_info *s);
 extern void cwop_setup(struct service_info *s);
 extern void mqtt_setup(struct service_info *s);
 extern void mysql_setup(struct service_info *s);
+extern void display_setup(struct service_info *s);
 
 /* wfp-utils.c */
 extern double calc_heatindex(double, double);

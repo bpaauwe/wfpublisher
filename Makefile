@@ -18,6 +18,7 @@ SOURCE= \
 		wfp-log.c \
 		wfp-db.c \
 		wfp-mqtt.c \
+		wfp-display.c \
 		wfp.h \
 		cJSON.c \
 		cJSON.h
@@ -35,6 +36,7 @@ OBJECTS= \
 		 wfp-db.o \
 		 wfp-mqtt.o \
 		 wfp-cwop.o \
+		 wfp-display.o \
 		 cJSON.o
 		
 
