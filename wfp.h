@@ -115,5 +115,16 @@ enum db_fields {
 	rainfall_year
 };
 
+/* wfp-utils.c */
+extern double calc_heatindex(double, double);
+extern double calc_dewpoint(double, double);
+extern double calc_windchill(double, double);
+extern double mb2in(double mb);
+extern double MS2MPH(double ms);
+extern double TempF(double tempc);
+extern int calc_pressure_trend(void);
+extern double calc_feelslike(double, double, double);
+extern char *time_stamp(int gmt, int mode);
+
 
 #endif

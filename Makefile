@@ -10,6 +10,7 @@ SOURCE= \
 		wfpublish.c \
 		wfp-rainfall.c \
 		wfp-send.c \
+		wfp-util.c \
 		wfp-wbug.c \
 		wfp-wunderground.c \
 		wfp-cwop.c \
@@ -26,6 +27,7 @@ OBJECTS= \
 		 wfpublish.o \
 		 wfp-rainfall.o \
 		 wfp-send.o \
+		 wfp-util.o \
 		 wfp-wbug.o \
 		 wfp-wunderground.o \
 		 wfp-pws.o \

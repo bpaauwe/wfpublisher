@@ -57,16 +57,8 @@
 static int wf_message_parse(char *msg);
 static void wfp_air_parse(cJSON *air);
 static void wfp_sky_parse(cJSON *sky);
-static double calc_dewpoint(void);
-static double calc_heatindex(void);
-static double calc_windchill(void);
-static double calc_feelslike(void);
-static int calc_pressure_trend(void);
 static void read_config(void);
 static void *publish(void *args);
-double TempF(double tempc);
-double MS2MPH(double ms);
-double mb2in(double mb);
 
 extern void send_to(int service, weather_data_t *wd);
 extern void rainfall(double amount);
@@ -79,7 +71,6 @@ extern void mqtt_disconnect(void);
 //extern double get_rain_yearly(void);
 //extern double get_rain_1hr(void);
 //extern double get_rain_24hrs(void);
-extern char *time_stamp(int gmt, int mode);
 
 /* Globals */
 MYSQL *sql = NULL;       /* Database handle */
@@ -281,8 +272,8 @@ static void wfp_air_parse(cJSON *air) {
 		SETWD(ob, wd.distance, 5)		// kilometers
 
 		/* derrived values */
-		wd.dewpoint = calc_dewpoint();	// farhenhi
-		wd.heatindex = calc_heatindex();// Celsius
+		wd.dewpoint = calc_dewpoint(wd.temperature, wd.humidity);	// farhenhi
+		wd.heatindex = calc_heatindex(wd.temperature, wd.humidity);// Celsius
 		wd.trend = calc_pressure_trend();
 		if (wd.temperature > wd.temperature_high)
 			wd.temperature_high = wd.temperature;
@@ -316,8 +307,8 @@ static void wfp_sky_parse(cJSON *sky) {
 		//SETWD(ob, wd.daily_rain, 11);  // current day (null in UDP packets)
 
 		/* derrived values */
-		wd.windchill = calc_windchill();
-		wd.feelslike = calc_feelslike();
+		wd.windchill = calc_windchill(wd.temperature, wd.windspeed);
+		wd.feelslike = calc_feelslike(wd.temperature, wd.windspeed, wd.humidity);
 
 		/* Track maximum gust over 10 intervals */
 		if (interval == 10) {
@@ -339,84 +330,6 @@ static void wfp_sky_parse(cJSON *sky) {
 		//wd.rainfall_24hr = get_rain_24hrs();    // past 24 hours
 
 	}
-}
-
-/*
- * Returns temp in C
- */
-static double calc_dewpoint(void) {
-	double b;
-	double h;
-
-	b = (17.625 * wd.temperature) / (243.04 + wd.temperature);
-	h = log(wd.humidity/100);
-
-	return (243.04 * (h + b)) / (17.625 - h - b);
-
-}
-
-/*
- * Returns temp in F
- */
-static double calc_heatindex(void) {
-	double t = TempF(wd.temperature);
-	double h = wd.humidity;
-	double c1 = -42.379;
-	double c2 = 2.04901523;
-	double c3 = 10.14333127;
-	double c4 = -0.22475541;
-	double c5 = -6.83783 * pow(10, -3);
-	double c6 = -5.481717 * pow(10, -2);
-	double c7 = 1.22874 * pow(10, -3);
-	double c8 = 8.5282 * pow(10, -4);
-	double c9 = -1.99 * pow(10, -6);
-
-	if ((t < 80.0) || (h < 40.0))
-		return t;
-	else
-		return (c1 + (c2 * t) + (c3 * h) + (c4 * t * h) + (c5 * t * t) + (c6 * h * h) + (c7 * t * t * h) + (c8 * t * h * h) + (c9 * t * t * h * h));
-}
-
-/*
- * Returns temp in F
- */
-static double calc_windchill(void) {
-	double t = TempF(wd.temperature);
-	double v = MS2MPH(wd.windspeed);
-
-	if ((t < 50.0) && (v > 5.0))
-		return 35.74 + (0.6215 * t) - (35.75 * pow(v, 0.16)) + (0.4275 * t * pow(v, 0.16));
-	else
-		return t;
-}
-
-/*
- * Returns temp in F
- */
-static double calc_feelslike(void) {
-	if (TempF(wd.temperature) >= 80)
-		return calc_heatindex();
-	else if (TempF(wd.temperature) < 50)
-		return calc_windchill();
-	else
-		return TempF(wd.temperature);
-}
-
-static int calc_pressure_trend(void) {
-	return 0.0;
-}
-
-
-double TempF(double tempc) {
-	return (tempc * 1.8) + 32;
-}
-
-double MS2MPH(double ms) {
-	return ms / 0.44704;
-}
-
-double mb2in(double mb) {
-	return mb * 0.02952998751;
 }
 
 static void read_config(void) {
