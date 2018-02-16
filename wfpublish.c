@@ -400,32 +400,35 @@ static void read_config(void) {
 
 			s = malloc(sizeof(struct service_info));
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "service");
-			s->service = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "service")))
+				s->service = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "index");
-			s->index = type->valueint;
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "index")))
+				s->index = type->valueint;
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "host");
-			s->cfg.host = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "host")))
+				s->cfg.host = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "name");
-			s->cfg.name = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "name")))
+				s->cfg.name = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "password");
-			s->cfg.pass = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "password")))
+				s->cfg.pass = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "extra");
-			s->cfg.extra = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "extra")))
+				s->cfg.extra = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_lat");
-			s->cfg.location_lat = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_lat")))
+				s->cfg.location_lat = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long");
-			s->cfg.location_long = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long")))
+				s->cfg.location_long = strdup(type->valuestring);
 
-			type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled");
-			s->enabled = type->valueint;
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long")))
+				s->cfg.location_long = strdup(type->valuestring);
+
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled")))
+				s->enabled = type->valueint;
 
 			printf("At index %d - Found  %s (%s)", i, s->service, s->cfg.host);
 			printf("  enabled[%d]=%d\n", s->index, s->enabled);
