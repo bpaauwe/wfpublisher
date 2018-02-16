@@ -424,8 +424,8 @@ static void read_config(void) {
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long")))
 				s->cfg.location_long = strdup(type->valuestring);
 
-			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long")))
-				s->cfg.location_long = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "metric")))
+				s->cfg.metric = type->valueint;
 
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled")))
 				s->enabled = type->valueint;

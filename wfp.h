@@ -73,6 +73,7 @@ struct cfg_info {
 	char *extra;
 	char *location_lat;
 	char *location_long;
+	int metric;
 };
 
 struct publisher_funcs {
