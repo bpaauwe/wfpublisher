@@ -54,9 +54,12 @@
 #include "wfp.h"
 #include "cJSON.h"
 
+#define GUST_INTERVAL 30 /* Seconds for gust tracking */
+
 static int wf_message_parse(char *msg);
 static void wfp_air_parse(cJSON *air);
 static void wfp_sky_parse(cJSON *sky);
+static void wfp_wind_parse(cJSON *wind);
 static void read_config(void);
 static void *publish(void *args);
 static void initialize_publishers(void);
@@ -202,6 +205,7 @@ static int wf_message_parse(char *msg) {
 			status |= 0x02;
 		} else if (strcmp(type->valuestring, "rapid_wind") == 0) {
 			if (verbose) printf("-> Rapid Wind packet\n");
+			wfp_wind_parse(msg_json);
 		} else if (strcmp(type->valuestring, "evt_strike") == 0) {
 			if (verbose) printf("-> Lightning strike packet\n");
 		} else if (strcmp(type->valuestring, "evt_precip") == 0) {
@@ -295,7 +299,7 @@ static void wfp_sky_parse(cJSON *sky) {
 		wd.feelslike = calc_feelslike(wd.temperature, wd.windspeed, wd.humidity);
 
 		/* Track maximum gust over 10 intervals */
-		if (interval == 10) {
+		if (interval == GUST_INTERVAL) {
 			SETWD(ob, wd.gustspeed, 6); // m/s
 			wd.gustdirection = wd.winddirection;
 			interval = 0;
@@ -305,11 +309,35 @@ static void wfp_sky_parse(cJSON *sky) {
 				wd.gustspeed = tmp->valuedouble;
 				wd.gustdirection = wd.winddirection;
 			}
+			interval++;
 		}
 
 		/* Track rainfall over time */
 		accumulate_rain(&wd, wd.rain);
 
+	}
+}
+
+/*
+ * parse the rapid wind messages.  Use these to
+ * update the gust information.
+ */
+static void wfp_wind_parse(cJSON *wind) {
+	cJSON *obs;
+	cJSON *ob;
+	int direction;
+
+	/* this is a 1 dimensional array [v,v,v,v,v,v,v] */
+	/* ob":[1493322445,2.3,128] */
+	obs = cJSON_GetObjectItemCaseSensitive(wind, "ob");
+
+	ob = cJSON_GetArrayItem(obs, 2); /* wind direction */
+	direction = ob->valueint;
+
+	ob = cJSON_GetArrayItem(obs, 1); /* wind speed */
+	if (ob->valuedouble > wd.gustspeed) {
+		wd.gustspeed = ob->valuedouble;
+		wd.gustdirection = direction;
 	}
 }
 
