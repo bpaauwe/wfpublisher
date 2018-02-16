@@ -86,7 +86,7 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	printf("Pressure trend: %5.1f         Lighting:   %5d         Distance:   %5.1f%s\n",
 			wd->trend, wd->strikes, wd->distance, d_str);
 
-	printf("----------------------------------------------------------------------------------\n");
+	printf("-------------------------------------------------------------------------------\n");
 
 	pthread_exit(NULL);
 	return;
