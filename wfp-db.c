@@ -35,13 +35,8 @@
 #include "wfp.h"
 
 extern char *time_stamp(int gmt, int mode);
-extern double TempF(double c);
-extern double MS2MPH(double ms);
-extern double mb2in(double mb);
 
-
-extern int debug;
-extern int verbose;
+static int debug;
 
 static int db_query(MYSQL *sql, char *query_str, char *msg);
 static int connect_to_database(MYSQL *sql, char *db_host, char *db_name,
@@ -60,7 +55,10 @@ void send_to_db(struct cfg_info *cfg, weather_data_t *wd)
 
 	gettimeofday(&start, NULL);
 
-	if (verbose || debug) {
+	if (!cfg->metric)
+		unit_convert(wd, CONVERT_ALL);
+
+	if (debug) {
 		ts_start = time_stamp(0, 1);
 		fprintf(stderr, "%s: Begin database update to %s\n", ts_start, cfg->host);
 		free(ts_start);
@@ -93,19 +91,19 @@ void send_to_db(struct cfg_info *cfg, weather_data_t *wd)
 			"rainfall_year=\"%f\","
 			"dewpoint=\"%f\","
 			"heatindex=\"%f\"",
-			mb2in(wd->pressure),
-			TempF(wd->temperature),
+			wd->pressure,
+			wd->temperature,
 			wd->humidity,
-			MS2MPH(wd->windspeed),
+			wd->windspeed,
 			wd->winddirection,
-			MS2MPH(wd->gustspeed),
+			wd->gustspeed,
 			wd->rain,
 			wd->rainfall_1hr,
 			wd->rainfall_day,
 			wd->rainfall_month,
 			wd->rainfall_year,
 			wd->winddirection,
-			TempF(wd->dewpoint),
+			wd->dewpoint,
 			wd->heatindex);
 
 	db_query(sql, query, "Failed to update record");
@@ -115,7 +113,7 @@ end:
 	mysql_close(sql);
 
 	gettimeofday(&end, NULL);
-	if (verbose || debug) {
+	if (debug) {
 		long diff;
 
 		diff = ((end.tv_sec-start.tv_sec)*1000000 +
@@ -260,8 +258,14 @@ void rainfall_data_get(MYSQL *sql, double *minute, double *hour, double *day,
 	}
 }
 
+static int db_init(struct cfg_info *cfg, int d)
+{
+	debug = d;
+	return 0;
+}
+
 static const struct publisher_funcs mysql_funcs = {
-	.init = NULL,
+	.init = db_init,
 	.update = send_to_db,
 	.cleanup = NULL
 };
