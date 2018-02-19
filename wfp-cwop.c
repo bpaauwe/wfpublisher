@@ -65,15 +65,21 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 	int humidity;
 	char ident[50];
 
+	/*
+	 * CWOP wants data in SI untis, except for pressure which is in
+	 * 10ths of millibars.
+	 */
+	unit_convert(wd, NO_PRESSURE);
+
 	/* First, is it time to send? */
 	if ((lt->tm_min % 10) != 0) {
 		/* would like to create average */
-		ws.pressure += (wd->pressure * 338.637526);         /* in millibars * 10 */
-		//ws.uncalibrated += (wd->uncalibrated * 338.637526);
+		ws.pressure += (wd->pressure * 10); /*  1/10ths of millibars */
 		ws.windspeed += wd->windspeed;
 		ws.winddirection += wd->winddirection;
 		ws.temperature += wd->temperature;
 		ws.humidity += wd->humidity;
+		ws.solar += wd->solar;
 		if (wd->gustspeed > ws.gustspeed)
 			ws.gustspeed = wd->gustspeed;
 		ws.rainfall_1hr = wd->rainfall_1hr;
@@ -118,7 +124,8 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 			"r%03d"  /* rain in last hour in hundreths of inch */
 			"P%03d"  /* rain since midnight in hundreths of inch */
 			"h%02d"  /* humidity, 00 = 100% */
-			"b%05d"  /* barometric pressure in tenths of millibars (uncorrected)*/
+			"b%05d"  /* barometric pressure in 10ths of millibars(uncorrected)*/
+			"L%03d"  /* Solar radiation (W/sq meter) */
 			"400\r\n",  /* hardware type */
 
 			cfg->name,
@@ -131,7 +138,8 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 			(int)round(ws.rainfall_1hr * 100),
 			(int)round(ws.rainfall_day * 100),
 			humidity,
-			(int)round(ws.pressure / count)
+			(int)round(ws.pressure / count),
+			(int)round(ws.solar / count)
 			);
 
 	if (verbose > 1)
