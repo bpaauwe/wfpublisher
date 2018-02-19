@@ -37,6 +37,7 @@ char *time_stamp(int gmt, int mode);
 void send_url(char *host, int port, char *url, char *ident, int response);
 char *resolve_host(char *host);
 char *resolve_host_ip6(char *host);
+double TempC(double tempf);
 
 static int verbose = 0;
 
@@ -222,22 +223,6 @@ char *time_stamp(int gmt, int mode)
 }
 
 
-/* Conversion functions */
-double TempF(double tempc) {
-	return (tempc * 1.8) + 32;
-}
-
-double TempC(double tempf) {
-	return (tempf  - 32) / 1.8;
-}
-
-double MS2MPH(double ms) {
-	return ms / 0.44704;
-}
-
-double mb2in(double mb) {
-	return mb * 0.02952998751;
-}
 
 /*
  * Calculate the pressure trend
@@ -311,5 +296,67 @@ double calc_heatindex(double tc, double h) {
 		return tc;
 	else
 		return TempC((c1 + (c2 * t) + (c3 * h) + (c4 * t * h) + (c5 * t * t) + (c6 * h * h) + (c7 * t * t * h) + (c8 * t * h * h) + (c9 * t * t * h * h)));
+}
+
+
+/* Conversion functions */
+double TempF(double tempc) {
+	return (tempc * 1.8) + 32;
+}
+
+double TempC(double tempf) {
+	return (tempf  - 32) / 1.8;
+}
+
+double MS2MPH(double ms) {
+	return ms / 0.44704;
+}
+
+double mb2in(double mb) {
+	return mb * 0.02952998751;
+}
+
+double km2miles(double km) {
+	return km / 1.609344;
+}
+
+double mm2inch(double mm) {
+	return mm * 0.03937;
+}
+
+/*
+ * Convert all data from metric to english units. The conversion
+ * is done in-place on the data structure.
+ */
+void unit_convert(weather_data_t *wd)
+{
+	/* convert temperature from C to F */
+	wd->temperature = TempF(wd->temperature);
+	wd->temperature_high = TempF(wd->temperature_high);
+	wd->temperature_low = TempF(wd->temperature_low);
+	wd->dewpoint = TempF(wd->dewpoint);
+	wd->heatindex = TempF(wd->heatindex);
+	wd->windchill = TempF(wd->windchill);
+	wd->feelslike = TempF(wd->feelslike);
+
+	/* convert speeds from m/s to mph */
+	wd->windspeed = MS2MPH(wd->windspeed);
+	wd->gustspeed = MS2MPH(wd->gustspeed);
+
+	/* Pressure from mb to in/hg */
+	wd->pressure = mb2in(wd->pressure);
+
+	/* distance from km to miles */
+	wd->distance = km2miles(wd->distance);
+
+	/* rain from mm to inches */
+	wd->rain = mm2inch(wd->rain);
+	wd->daily_rain = mm2inch(wd->daily_rain);
+	wd->rainfall_1hr = mm2inch(wd->rainfall_1hr);
+	wd->rainfall_day = mm2inch(wd->rainfall_day);
+	wd->rainfall_month = mm2inch(wd->rainfall_month);
+	wd->rainfall_year = mm2inch(wd->rainfall_year);
+	wd->rainfall_60min = mm2inch(wd->rainfall_60min);
+	wd->rainfall_24hr = mm2inch(wd->rainfall_24hr);
 }
 

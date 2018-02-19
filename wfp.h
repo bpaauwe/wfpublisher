@@ -141,6 +141,7 @@ extern double TempF(double tempc);
 extern int calc_pressure_trend(void);
 extern double calc_feelslike(double, double, double);
 extern char *time_stamp(int gmt, int mode);
+extern void unit_convert(weather_data_t *wd);
 
 
 #endif
