@@ -57,7 +57,7 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 		sprintf(p_str, " mb");
 		sprintf(d_str, " km");
 	} else {
-		unit_convert(wd);
+		unit_convert(wd, CONVERT_ALL);
 		sprintf(t_str, "°F");
 		sprintf(s_str, " mph");
 		sprintf(r_str, " in");

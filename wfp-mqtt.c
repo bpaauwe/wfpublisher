@@ -75,7 +75,7 @@ static void mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
 	int ret = 0;
 
 	if (!cfg->metric)
-		unit_convert(wd);
+		unit_convert(wd, CONVERT_ALL);
 
 
 	ret += mosquitto_publish(mosq, NULL, "home/climate/last_update",

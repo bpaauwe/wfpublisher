@@ -328,7 +328,7 @@ double mm2inch(double mm) {
  * Convert all data from metric to english units. The conversion
  * is done in-place on the data structure.
  */
-void unit_convert(weather_data_t *wd)
+void unit_convert(weather_data_t *wd, unsigned int skip)
 {
 	/* convert temperature from C to F */
 	wd->temperature = TempF(wd->temperature);
@@ -343,8 +343,10 @@ void unit_convert(weather_data_t *wd)
 	wd->windspeed = MS2MPH(wd->windspeed);
 	wd->gustspeed = MS2MPH(wd->gustspeed);
 
-	/* Pressure from mb to in/hg */
-	wd->pressure = mb2in(wd->pressure);
+	if (!(skip & NO_PRESSURE)) {
+		/* Pressure from mb to in/hg */
+		wd->pressure = mb2in(wd->pressure);
+	}
 
 	/* distance from km to miles */
 	wd->distance = km2miles(wd->distance);
