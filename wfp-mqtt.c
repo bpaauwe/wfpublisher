@@ -74,89 +74,120 @@ static void mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
 	char buf[30];
 	int ret = 0;
 
+	if (!cfg->metric)
+		unit_convert(wd);
+
+
 	ret += mosquitto_publish(mosq, NULL, "home/climate/last_update",
 			strlen(wd->timestamp), wd->timestamp, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->temperature));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/temperature", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->temperature);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/temperature",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->temperature_high));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/high_temperature", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->temperature_high);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/high_temperature",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->temperature_low));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/low_temperature", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->temperature_low);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/low_temperature",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->humidity);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/humidity", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/humidity",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->pressure);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/pressure", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/pressure",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->trend);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/pressure_trend", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/pressure_trend",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", MS2MPH(wd->windspeed));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/wind_speed", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->windspeed);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/wind_speed",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", MS2MPH(wd->gustspeed));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/gust_speed", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->gustspeed);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/gust_speed",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->winddirection);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/wind_direction", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/wind_direction",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->gustdirection);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/gust_direction", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/gust_direction",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->dewpoint));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/dewpoint", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->dewpoint);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/dewpoint",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->heatindex));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/heat_index", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->heatindex);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/heat_index",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->windchill));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/windchill", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->windchill);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/windchill",
+			strlen(buf), buf, 0, false);
 
-	sprintf(buf, "%f", TempF(wd->feelslike));
-	ret += mosquitto_publish(mosq, NULL, "home/climate/feels_like", strlen(buf), buf, 0, false);
+	sprintf(buf, "%f", wd->feelslike);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/feels_like",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->illumination);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/illumination", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/illumination",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->solar);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/solar_radition", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/solar_radition",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->uv);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/UV_index", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/UV_index",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%d", wd->strikes);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/lightning_strikes", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/lightning_strikes",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->distance);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/lightning_distance", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/lightning_distance",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rain);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/rain", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/rain",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->daily_rain);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/daily_rain", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/daily_rain",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rainfall_1hr);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/hour_rain", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/hour_rain",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rainfall_day);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/day_rain", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/day_rain",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rainfall_month);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/month_rain", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/month_rain",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rainfall_year);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/year_rain", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/year_rain",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rainfall_60min);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/rain_60min", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/rain_60min",
+			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->rainfall_24hr);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/rain_24hr", strlen(buf), buf, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/rain_24hr",
+			strlen(buf), buf, 0, false);
 
 	if (ret)
 		fprintf(stderr, "Publishing failed %d times\n", ret);
