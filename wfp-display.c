@@ -44,18 +44,27 @@
  */
 static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 {
-	char t_str[3];
+	char t_str[4];
 	char s_str[5];
 	char r_str[4];
 	char p_str[7];
-	char d_str[5];
+	char d_str[7];
 
-	/* Currently data is in metric format */
-	sprintf(t_str, "\370C");
-	sprintf(s_str, " m/s");
-	sprintf(r_str, " mm");
-	sprintf(p_str, " mb");
-	sprintf(d_str, " km");
+	if (cfg->metric) {
+		sprintf(t_str, "°C");
+		sprintf(s_str, " m/s");
+		sprintf(r_str, " mm");
+		sprintf(p_str, " mb");
+		sprintf(d_str, " km");
+	} else {
+		unit_convert(wd);
+		sprintf(t_str, "°F");
+		sprintf(s_str, " mph");
+		sprintf(r_str, " in");
+		sprintf(p_str, " in/hg");
+		sprintf(d_str, " miles");
+	}
+
 
 	/* Format the output to fit nicely on the display */
 	printf("Last Update: %s\n\n", wd->timestamp);
@@ -68,9 +77,9 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	printf("Pressure:      %6.1f%-6s   Humidity:   %5.1f%%        Feels like: %5.1f%s\n\n",
 			wd->pressure, p_str, wd->humidity, wd->feelslike, t_str);
 
-	printf("Wind speed:     %5.1f%s     Wind dir:   %5.0f\370\n",
+	printf("Wind speed:     %5.1f%s     Wind dir:   %5.0f°\n",
 			wd->windspeed, s_str, wd->winddirection);
-	printf("Gust speed:     %5.1f%s     Gust dir:   %5.0f\370\n\n",
+	printf("Gust speed:     %5.1f%s     Gust dir:   %5.0f°\n\n",
 			wd->gustspeed, s_str, wd->gustdirection);
 
 	printf("Illumination:   %5.1f Lux     Solar Rad:  %5.01f W/m^2   UV index:   %5.0f\n\n",
