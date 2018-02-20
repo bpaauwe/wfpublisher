@@ -243,6 +243,11 @@ static void wfp_air_parse(cJSON *air) {
 	int i;
 	struct tm *lt;
 
+	if (debug) {
+		tmp = cJSON_GetObjectItemCaseSensitive(air, "serial_number");
+		printf("AIR data serial number: %s\n", tmp->valuestring);
+	}
+
 	/* this is a 2 dimensional array [[v,v,v,v,v,v,v]] */
 	obs = cJSON_GetObjectItemCaseSensitive(air, "obs");
 	for (i = 0 ; i < cJSON_GetArraySize(obs) ; i++) {
@@ -279,6 +284,11 @@ static void wfp_sky_parse(cJSON *sky) {
 	cJSON *ob;
 	cJSON *tmp;
 	int i;
+
+	if (debug) {
+		tmp = cJSON_GetObjectItemCaseSensitive(sky, "serial_number");
+		printf("SKY data serial number: %s\n", tmp->valuestring);
+	}
 
 	/* this is a 2 dimensional array [[v,v,v,v,v,v,v]] */
 	obs = cJSON_GetObjectItemCaseSensitive(sky, "obs");
