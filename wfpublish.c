@@ -51,6 +51,7 @@
 #include <time.h>
 #include <pthread.h>
 #include <mysql/mysql.h>
+#include <errno.h>
 #include "wfp.h"
 #include "cJSON.h"
 
@@ -79,8 +80,13 @@ int verbose = 0;         /* set when verbose output is enabled */
 int dont_send = 0;       /* send data to weather services */
 weather_data_t wd;
 int interval = 0;
-int status = 0;
 struct service_info *sinfo = NULL;
+
+static pthread_mutex_t data_event_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t  data_event_trigger = PTHREAD_COND_INITIALIZER;
+
+#define AIRDATA 0x01
+#define SKYDATA 0x02
 
 int main (int argc, char **argv)
 {
@@ -91,6 +97,7 @@ int main (int argc, char **argv)
 	int sock;
 	struct sockaddr_in s;
 	int optval;
+	int st = 0;
 
 	/* process command line arguments */
 	if (argc > 1) {
@@ -168,8 +175,16 @@ int main (int argc, char **argv)
 
 	while ((bytes = read(sock, line, 1024)) > 0) {
 		line[bytes] = '\0';
-		wf_message_parse(line);
+		st |= wf_message_parse(line);
 		//printf("recv: %s\n", line);
+
+		/* If we have data to publish */
+		if (st == (AIRDATA | SKYDATA)) {
+			pthread_mutex_lock(&data_event_mutex);
+			pthread_cond_signal(&data_event_trigger);
+			pthread_mutex_unlock(&data_event_mutex);
+			st = 0;
+		}
 	}
 
 	close(sock);
@@ -182,6 +197,7 @@ int main (int argc, char **argv)
 static int wf_message_parse(char *msg) {
 	cJSON *msg_json;
 	const cJSON *type = NULL;
+	int ret = 0;
 
 	msg_json = cJSON_Parse(msg);
 	if (msg == NULL) {
@@ -189,7 +205,6 @@ static int wf_message_parse(char *msg) {
 		if (error_ptr != NULL) {
 			fprintf(stderr, "Error before: %s\n", error_ptr);
 		}
-		status = 0;
 		goto end;
 	}
 
@@ -198,11 +213,11 @@ static int wf_message_parse(char *msg) {
 		if (strcmp(type->valuestring, "obs_air") == 0) {
 			if (verbose) printf("-> Air packet\n");
 			wfp_air_parse(msg_json);
-			status |= 0x01;
+			ret = AIRDATA;
 		} else if (strcmp(type->valuestring, "obs_sky") == 0) {
 			if (verbose) printf("-> Sky packet\n");
 			wfp_sky_parse(msg_json);
-			status |= 0x02;
+			ret = SKYDATA;
 		} else if (strcmp(type->valuestring, "rapid_wind") == 0) {
 			if (verbose) printf("-> Rapid Wind packet\n");
 			wfp_wind_parse(msg_json);
@@ -223,7 +238,7 @@ static int wf_message_parse(char *msg) {
 
 end:
 	cJSON_Delete(msg_json);
-	return status;
+	return ret;
 }
 
 #define SETWD(j, w, v) { \
@@ -488,18 +503,29 @@ static void cleanup_publishers(void)
 
 /*
  * Publish the weather data to the various services
+ *
+ * This function is invoked as a separate pthread. It waits for an
+ * event from the main thread that indicates that new data is available.
+ * When new data is ready, it loops through the configured publishing
+ * services and sends the data to those that are enabled.
  */
 static void *publish(void *args)
 {
 	struct service_info *sitr;
 
-	/* Wait until we've actually received some data */
-	while (status != (0x01 | 0x02)) {
-		printf("Waiting for valid data to be received status = 0x%x\n", status);
-		sleep(5);
-	}
-
 	while (1) {
+		int res_wait;
+
+		/* Wait for an event saying we've got new data */
+		if (debug) fprintf(stderr, "Waiting on data available event\n");
+		res_wait = pthread_cond_wait(&data_event_trigger, &data_event_mutex);
+		if (res_wait == EINVAL) {
+			fprintf(stderr, "Error waiting on event\n");
+			continue;
+		}
+		if (debug) fprintf(stderr, "Data available event happened\n");
+
+		/* Send the data to each enabled service */
 		for (sitr = sinfo; sitr != NULL; sitr = sitr->next) {
 			if (verbose)
 				printf("%s is %s\n", sitr->service,
@@ -511,8 +537,6 @@ static void *publish(void *args)
 				send_to(sitr, &wd);
 			}
 		}
-
-		sleep(60);
 	}
 
 	return 0;
