@@ -33,9 +33,6 @@
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
 extern char *time_stamp(int gmt, int mode);
-extern double TempF(double c);
-extern double MS2MPH(double ms);
-extern double mb2in(double mb);
 
 
 extern int debug;
@@ -56,6 +53,9 @@ void send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
 	char *ts_start, *ts_end;
 	time_t t = time(NULL);
 	struct tm* lt = localtime(&t);
+
+	if (!cfg->metric)
+		unit_convert(wd, CONVERT_ALL);
 
 	/* Limit sending to PWS Weather */
 	if ((lt->tm_min % 2) != 0) {
@@ -112,15 +112,15 @@ void send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
 			cfg->name,
 			cfg->pass,
 			ts_start,
-			mb2in(ws.pressure / count),
+			(ws.pressure / count),
 			(ws.rainfall_day),
 			(ws.rainfall_1hr),
 			(ws.winddirection / count),
-			MS2MPH(ws.gustspeed),
-			MS2MPH(ws.windspeed / count),
+			ws.gustspeed,
+			(ws.windspeed / count),
 			(ws.humidity / count),
-			TempF(ws.dewpoint / count),
-			TempF(ws.temperature / count),
+			(ws.dewpoint / count),
+			(ws.temperature / count),
 			(ws.rainfall_month),
 			(ws.rainfall_year),
 			ws.solar,
