@@ -32,14 +32,8 @@
 #include "wfp.h"
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
-extern char *time_stamp(int gmt, int mode);
-extern double TempF(double c);
-extern double MS2MPH(double ms);
-extern double mb2in(double mb);
 
-extern int debug;
-extern int verbose;
-
+static int debug;
 static char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
 
 /*
@@ -54,11 +48,10 @@ void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 
 	gettimeofday(&start, NULL);
 
-	if (debug) {
-		printf("In send_to_wunderground\n");
-	}
+	if (!cfg->metric)
+		unit_convert(wd, CONVERT_ALL);
 
-	if (verbose || debug) {
+	if (debug) {
 		ts_start = time_stamp(0, 1);
 		fprintf(stderr, "%s: Begin upload to WUnderground\n", ts_start);
 		free(ts_start);
@@ -97,9 +90,6 @@ void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 			wd->temperature
 			);
 
-	if (verbose > 1)
-		fprintf(stderr, "wunderground: %s\n", request);
-
 	/*
 	 * Build url string using tpl as a template
 	 * sprintf(query, tpl, <page>, <host>, <USERAGENT>)
@@ -124,7 +114,7 @@ void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 
 	gettimeofday(&end, NULL);
 
-	if (verbose || debug) {
+	if (debug) {
 		long diff;
 
 		diff = ((end.tv_sec-start.tv_sec)*1000000 +
@@ -140,8 +130,15 @@ void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
 	return;
 }
 
+static int wu_init(struct cfg_info *cfg, int d)
+{
+	debug = d;
+	return 0;
+}
+
+
 static const struct publisher_funcs wunderground_funcs = {
-	.init = NULL,
+	.init = wu_init,
 	.update = send_to_wunderground,
 	.cleanup = NULL
 };
