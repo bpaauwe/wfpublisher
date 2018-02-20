@@ -50,7 +50,6 @@
 #include <fcntl.h>
 #include <time.h>
 #include <pthread.h>
-#include <mysql/mysql.h>
 #include <errno.h>
 #include "wfp.h"
 #include "cJSON.h"
@@ -73,11 +72,8 @@ extern int mqtt_init(void);
 extern void mqtt_disconnect(void);
 
 /* Globals */
-MYSQL *sql = NULL;       /* Database handle */
-int testmode = 0;        /* set when invoked in test mode */
 int debug = 0;           /* set when debugging output is enabled */
 int verbose = 0;         /* set when verbose output is enabled */
-int dont_send = 0;       /* send data to weather services */
 weather_data_t wd;
 int interval = 0;
 struct service_info *sinfo = NULL;
@@ -104,10 +100,6 @@ int main (int argc, char **argv)
 		for(i = 1; i < argc; i++) {
 			if (argv[i][0] == '-') { /* An option */
 				switch (argv[i][1]) {
-					case 't': /* testmode */
-						testmode = 1;
-						debug = 1; /* implies debug mode */
-						break;
 					case 'd': /* debug */
 						debug = 1;
 						break;
@@ -122,13 +114,8 @@ int main (int argc, char **argv)
 						if (strcmp(argv[i], "vvv") == 0)
 							verbose = 3;
 						break;
-					case 's':
-						dont_send = 1;
-						break;
 					default:
-						printf("usage: %s [-t] [-d]\n", argv[0]);
-						printf("        -t runs in test mode\n");
-						printf("        -s don't send to weather services\n");
+						printf("usage: %s [-d]\n", argv[0]);
 						printf("        -v verbose output\n");
 						printf("        -d turns on debugging\n");
 						printf("\n");
