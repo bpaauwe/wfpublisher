@@ -32,14 +32,8 @@
 #include "wfp.h"
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
-extern char *time_stamp(int gmt, int mode);
-extern double TempF(double c);
-extern double MS2MPH(double ms);
-extern double mb2in(double mb);
 
-extern int debug;
-extern int verbose;
-
+static int debug;
 static char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
 static weather_data_t ws;
 static int count = 0;
@@ -55,6 +49,9 @@ void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 	char *ts_start, *ts_end;
 	time_t t = time(NULL);
 	struct tm* lt = localtime(&t);
+
+	if (!cfg->metric)
+		unit_convert(wd, CONVERT_ALL);
 
 	/* Limit sending to weatherbug */
 	if ((lt->tm_min % 2) != 0) {
@@ -81,7 +78,7 @@ void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 
 	gettimeofday(&start, NULL);
 
-	if (verbose || debug) {
+	if (debug) {
 		ts_start = time_stamp(0, 1);
 		fprintf(stderr, "%s: Begin upload to WeatherBug\n", ts_start);
 		free(ts_start);
@@ -126,9 +123,6 @@ void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 			(ws.rainfall_year)
 			);
 
-	if (verbose > 1)
-		fprintf(stderr, "weatherbug: %s\n", request);
-
 	/*
 	 * Build url string using tpl as a template
 	 * sprintf(query, tpl, <page>, <host>, <USERAGENT>)
@@ -156,7 +150,7 @@ void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
 	memset(&ws, 0, sizeof(weather_data_t));
 
 	gettimeofday(&end, NULL);
-	if (verbose || debug) {
+	if (debug) {
 		long diff;
 
 		diff = ((end.tv_sec-start.tv_sec)*1000000 +
@@ -173,8 +167,15 @@ out:
 	return;
 }
 
+static int wbug_init(struct cfg_info *cfg, int d)
+{
+	debug = d;
+	return 0;
+}
+
+
 static const struct publisher_funcs wbug_funcs = {
-	.init = NULL,
+	.init = wbug_init,
 	.update = send_to_weatherbug,
 	.cleanup = NULL
 };
