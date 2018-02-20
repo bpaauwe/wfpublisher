@@ -33,13 +33,8 @@
 #include "wfp.h"
 
 extern char *time_stamp(int gmt, int mode);
-extern double TempF(double c);
-extern double MS2MPH(double ms);
-extern double mb2in(double mb);
 
-
-extern int debug;
-extern int verbose;
+static int debug;
 
 /*
  * Local log to file
@@ -53,8 +48,19 @@ void send_to_log(struct cfg_info *cfg, weather_data_t *wd)
 	time_t t = time(NULL);
 	struct tm* lt = localtime(&t);
 	FILE *fp;
+	char p_str[5];
+	char m_str[4];
 
 	gettimeofday(&start, NULL);
+
+	if (!cfg->metric) {
+		unit_convert(wd, CONVERT_ALL);
+		sprintf(p_str, "HgIn");
+		sprintf(m_str, "mph");
+	} else {
+		sprintf(p_str, "mb");
+		sprintf(m_str, "m/s");
+	}
 
 	fp = fopen(cfg->host, "a");
 	if (fp == NULL) {
@@ -62,7 +68,7 @@ void send_to_log(struct cfg_info *cfg, weather_data_t *wd)
 		goto end;
 	}
 
-	if (verbose || debug) {
+	if (debug) {
 		ts_start = time_stamp(0, 1);
 		fprintf(stderr, "%s: Begin logging to %s\n", ts_start, cfg->host);
 		free(ts_start);
@@ -72,26 +78,29 @@ void send_to_log(struct cfg_info *cfg, weather_data_t *wd)
 			lt->tm_year + 1900, lt->tm_mon + 1, lt->tm_mday,
 			lt->tm_hour, lt->tm_min, lt->tm_sec);
 
-	fprintf(fp, "|%.2fHgIn|%.2f|%.2f|%.2f|%.2f|%.2f|%3.0f|%.1fmph|%.1fmph|%.1f%%|%.1fº|%.1fº\n",
-			mb2in(wd->pressure),
+	fprintf(fp, "|%.2f%s|%.2f|%.2f|%.2f|%.2f|%.2f|%3.0f|%.1f%s|%.1f%s|%.1f%%|%.1fº|%.1fº\n",
+			wd->pressure,
+			p_str,
 			wd->rainfall_year,
 			wd->rainfall_month,
 			wd->rainfall_day,
 			wd->rainfall_1hr,
 			wd->rain,
 			wd->winddirection,
-			MS2MPH(wd->gustspeed),
-			MS2MPH(wd->windspeed),
+			wd->gustspeed,
+			m_str,
+			wd->windspeed,
+			m_str,
 			wd->humidity,
-			TempF(wd->dewpoint),
-			TempF(wd->temperature));
+			wd->dewpoint,
+			wd->temperature);
 
 	fclose (fp);
 
 end:
 
 	gettimeofday(&end, NULL);
-	if (verbose || debug) {
+	if (debug) {
 		long diff;
 
 		diff = ((end.tv_sec-start.tv_sec)*1000000 +
@@ -107,8 +116,14 @@ end:
 	return;
 }
 
+static int log_init(struct cfg_info *cfg, int d)
+{
+	debug = d;
+	return 0;
+}
+
 static const struct publisher_funcs log_funcs = {
-	.init = NULL,
+	.init = log_init,
 	.update = send_to_log,
 	.cleanup = NULL
 };
