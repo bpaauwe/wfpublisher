@@ -49,6 +49,7 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	char r_str[4];
 	char p_str[7];
 	char d_str[7];
+	char trend[8];
 
 	if (cfg->metric) {
 		sprintf(t_str, "°C");
@@ -65,6 +66,12 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 		sprintf(d_str, " miles");
 	}
 
+	if (wd->trend > 0)
+		sprintf(trend, "raising");
+	else if (wd->trend < 0)
+		sprintf(trend, "falling");
+	else
+		sprintf(trend, "steady");
 
 	/* Format the output to fit nicely on the display */
 	printf("Last Update: %s\n\n", wd->timestamp);
@@ -92,8 +99,8 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	printf("Day rain:       %5.1f%s      Month rain: %5.1f%s      Year rain:  %5.1f%s\n\n",
 			wd->rainfall_day, r_str, wd->rainfall_month, r_str, wd->rainfall_year, r_str);
 
-	printf("Pressure trend: %5.1f         Lighting:   %5d         Distance:   %5.1f%s\n",
-			wd->trend, wd->strikes, wd->distance, d_str);
+	printf("Pressure trend: %7s       Lighting:   %5d         Distance:   %5.1f%s\n",
+			trend, wd->strikes, wd->distance, d_str);
 
 	printf("-------------------------------------------------------------------------------\n");
 

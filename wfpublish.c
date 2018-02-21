@@ -273,7 +273,7 @@ static void wfp_air_parse(cJSON *air) {
 		/* derrived values */
 		wd.dewpoint = calc_dewpoint(wd.temperature, wd.humidity);	// farhenhi
 		wd.heatindex = calc_heatindex(wd.temperature, wd.humidity);// Celsius
-		wd.trend = calc_pressure_trend();
+		wd.trend = calc_pressure_trend(wd.pressure);
 		if (wd.temperature > wd.temperature_high)
 			wd.temperature_high = wd.temperature;
 		if (wd.temperature < wd.temperature_low)

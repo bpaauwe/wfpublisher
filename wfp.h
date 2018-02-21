@@ -138,7 +138,7 @@ extern double calc_windchill(double, double);
 extern double mb2in(double mb);
 extern double MS2MPH(double ms);
 extern double TempF(double tempc);
-extern int calc_pressure_trend(void);
+extern int calc_pressure_trend(double);
 extern double calc_feelslike(double, double, double);
 extern char *time_stamp(int gmt, int mode);
 #define CONVERT_ALL 0x00

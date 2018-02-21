@@ -228,8 +228,50 @@ char *time_stamp(int gmt, int mode)
  * Calculate the pressure trend
  *   - raising / falling / steady
  */
-int calc_pressure_trend(void) {
-	return 0.0;
+struct trend_data {
+	time_t t;
+	double p;
+	struct trend_data *next;
+	struct trend_data *prev;
+};
+
+static struct trend_data *trend = NULL;
+static struct trend_data *trend_tail = NULL;
+
+int calc_pressure_trend(double pressure) {
+	struct trend_data *td;
+	int p_trend = 0;
+
+	td = (struct trend_data *)malloc(sizeof(struct trend_data));
+	td->t = time(NULL);
+	td->p = pressure;
+	td->next = trend;
+	td->prev = NULL;
+
+	/* if first reading, mark it as tail */
+	if (trend)
+		trend->prev = td;
+	else
+		trend_tail = td;
+
+	trend = td;
+
+
+	/* Calculate trend. Not really valid until 3 hours worth, but... */
+	if (trend_tail->p < pressure)
+		p_trend = 1;
+	else if (trend_tail->p > pressure)
+		p_trend = -1;
+
+	/* Check the tail's time, if it is older than 3 hours dequeue it */
+	if ((time(NULL) - trend_tail->t) >= (60 * 60 * 3)) {
+		td = trend_tail->prev;
+		free(trend_tail);
+		td->next = NULL;
+		trend_tail = td;
+	}
+
+	return p_trend;
 }
 
 /*
