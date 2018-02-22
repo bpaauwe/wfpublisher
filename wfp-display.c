@@ -75,7 +75,7 @@ static void display_wd(struct cfg_info *cfg, struct station_info *station,
 		sprintf(trend, "steady");
 
 	/* Format the output to fit nicely on the display */
-	printf("Last Update: %s\n\n", wd->timestamp);
+	printf("%s  -- Last Update: %s\n\n", station->name, wd->timestamp);
 
 	printf("Temperature:    %5.1f%s       High:       %5.1f%s       Low:        %5.1f%s\n",
 			wd->temperature, t_str, wd->temperature_high, t_str, wd->temperature_low, t_str);
