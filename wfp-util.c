@@ -275,6 +275,15 @@ int calc_pressure_trend(double pressure) {
 }
 
 /*
+ * Convert pressure from station pressure to pressure
+ * at sealevel. Altitude is in meter.
+ */
+double station_2_sealevel(double station, double alt)
+{
+	return station + (alt / 8.3);
+}
+
+/*
  * Calculate the "feels like" temperature.
  * Returns temp in F
  */
