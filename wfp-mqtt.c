@@ -69,14 +69,28 @@ static int mqtt_init(struct cfg_info *cfg, int debug)
 	return 0;
 }
 
+static double sealevel(double pressure, int elevation)
+{
+	double slmb;
+
+	slmb = pressure + ((double)elevation * .3048)/8.3;
+
+	return slmb;
+}
+
 static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 						weather_data_t *wd)
 {
 	char buf[30];
 	int ret = 0;
+	double sealv;
 
-	if (!cfg->metric)
+	sealv = sealevel(wd->pressure, station->elevation);
+
+	if (!cfg->metric) {
 		unit_convert(wd, CONVERT_ALL);
+		sealv = mb2in(sealv);
+	}
 
 
 	ret += mosquitto_publish(mosq, NULL, "home/climate/last_update",
@@ -100,6 +114,10 @@ static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 
 	sprintf(buf, "%f", wd->pressure);
 	ret += mosquitto_publish(mosq, NULL, "home/climate/pressure",
+			strlen(buf), buf, 0, false);
+
+	sprintf(buf, "%f", sealv);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/sealevel",
 			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->trend);
