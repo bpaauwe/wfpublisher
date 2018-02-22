@@ -194,6 +194,18 @@ static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 	ret += mosquitto_publish(mosq, NULL, "home/climate/wind_dir_text",
 			strlen(buf), buf, 0, false);
 
+	ret += mosquitto_publish(mosq, NULL, "home/climate/station",
+			strlen(station->name), station->name, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/location",
+			strlen(station->location), station->location, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/latitude",
+			strlen(station->latitude), station->latitude, 0, false);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/longitude",
+			strlen(station->longitude), station->longitude, 0, false);
+	sprintf(buf, "%d", station->elevation);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/elevation",
+			strlen(buf), buf, 0, false);
+
 	if (ret)
 		fprintf(stderr, "Publishing failed %d times\n", ret);
 
