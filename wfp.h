@@ -71,14 +71,21 @@ struct cfg_info {
 	char *name;
 	char *pass;
 	char *extra;
-	char *location_lat;
-	char *location_long;
 	int metric;
+};
+
+struct station_info {
+	char *name;
+	char *location;
+	char *latitude;
+	char *longitude;
+	int elevation;
 };
 
 struct publisher_funcs {
 	int (*init)(struct cfg_info *info, int debug);
-	void (*update)(struct cfg_info *info, weather_data_t *data);
+	void (*update)(struct cfg_info *info, struct station_info *station,
+					weather_data_t *data);
 	void (*cleanup)(void);
 };
 
@@ -86,6 +93,7 @@ struct service_info {
 	char *service;
 	int enabled;
 	int index;
+	struct station_info station;
 	struct cfg_info cfg;
 	struct service_info *next;
 	struct publisher_funcs funcs;

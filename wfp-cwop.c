@@ -33,10 +33,6 @@
 #include "wfp.h"
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
-extern char *time_stamp(int gmt, int mode);
-extern double TempF(double c);
-extern double MS2MPH(double ms);
-extern double mb2in(double mb);
 
 extern int debug;
 extern int verbose;
@@ -54,7 +50,8 @@ static int count = 0;
  * minimum of 10 minutes.  This will batch up the request
  * and send 'average' data at 10 minute intervals.
  */
-void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_cwop(struct cfg_info *cfg, struct station_info *station,
+				weather_data_t *wd)
 {
 	char *request;
 	struct timeval start, end;
@@ -130,7 +127,7 @@ void send_to_cwop(struct cfg_info *cfg, weather_data_t *wd)
 
 			cfg->name,
 			gm->tm_mday, gm->tm_hour, gm->tm_min,
-			cfg->location_lat, cfg->location_long,
+			station->latitude, station->longitude,
 			(int)round(ws.winddirection / count),
 			(int)round(ws.windspeed / count),
 			(int)round(ws.gustspeed),

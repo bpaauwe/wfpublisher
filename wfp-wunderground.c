@@ -39,7 +39,8 @@ static char *tpl = "GET /%s HTTP/1.0\r\nHost: %s\r\nUser-Agent: %s\r\n\r\n";
 /*
  * Weather Underground publisher.
  */
-void send_to_wunderground(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_wunderground(struct cfg_info *cfg, struct station_info *station,
+						weather_data_t *wd)
 {
 	char *str;
 	char *request;

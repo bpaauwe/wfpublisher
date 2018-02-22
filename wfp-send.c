@@ -61,7 +61,7 @@ void *invoke_publisher(void *data)
 {
 	struct thread_info *t = (struct thread_info *)data;
 
-	(t->sinfo->funcs.update)(&t->sinfo->cfg, t->data);
+	(t->sinfo->funcs.update)(&t->sinfo->cfg, &t->sinfo->station, t->data);
 
 	free(t->data->timestamp);
 	free(t->data);

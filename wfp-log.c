@@ -41,7 +41,8 @@ static int debug;
  *
  * Log the weather data to a local file on the filesystem
  */
-void send_to_log(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_log(struct cfg_info *cfg, struct station_info *station,
+				weather_data_t *wd)
 {
 	struct timeval start, end;
 	char *ts_start, *ts_end;

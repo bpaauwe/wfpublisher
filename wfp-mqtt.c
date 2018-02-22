@@ -69,7 +69,8 @@ static int mqtt_init(struct cfg_info *cfg, int debug)
 	return 0;
 }
 
-static void mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
+static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
+						weather_data_t *wd)
 {
 	char buf[30];
 	int ret = 0;

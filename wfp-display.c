@@ -42,7 +42,8 @@
  * interactive view.  However, this could eventually be used
  * to provide some type of GUI output.
  */
-static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
+static void display_wd(struct cfg_info *cfg, struct station_info *station,
+					weather_data_t *wd)
 {
 	char t_str[4];
 	char s_str[5];

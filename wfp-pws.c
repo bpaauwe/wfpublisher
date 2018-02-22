@@ -32,7 +32,6 @@
 #include "wfp.h"
 
 extern void send_url(char *host, int port, char *url, char *ident, int resp);
-extern char *time_stamp(int gmt, int mode);
 
 
 extern int debug;
@@ -45,7 +44,8 @@ static int count = 0;
 /*
  * PWS Weather publisher
  */
-void send_to_pws(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_pws(struct cfg_info *cfg, struct station_info *station,
+				weather_data_t *wd)
 {
 	char *str;
 	char *request;

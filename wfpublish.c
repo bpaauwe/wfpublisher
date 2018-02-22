@@ -393,6 +393,7 @@ static void read_config(void) {
 	const cJSON *type = NULL;
 	int i;
 	struct service_info *s;
+	struct station_info station;
 
 
 	printf("Reading configuration file.\n");
@@ -408,6 +409,17 @@ static void read_config(void) {
 		services = cJSON_GetObjectItemCaseSensitive(cfg_json, "version");
 		printf("Version = %s\n", services->valuestring);
 
+		if ((type = cJSON_GetObjectItemCaseSensitive(cfg_json, "name")))
+			station.name = strdup(type->valuestring);
+		if ((type = cJSON_GetObjectItemCaseSensitive(cfg_json, "location")))
+			station.location = strdup(type->valuestring);
+		if ((type = cJSON_GetObjectItemCaseSensitive(cfg_json, "latitude")))
+			station.latitude = strdup(type->valuestring);
+		if ((type = cJSON_GetObjectItemCaseSensitive(cfg_json, "longitude")))
+			station.longitude = strdup(type->valuestring);
+		if ((type = cJSON_GetObjectItemCaseSensitive(cfg_json, "elevation")))
+			station.elevation = type->valueint;
+
 		services = cJSON_GetObjectItemCaseSensitive(cfg_json, "services");
 		for (i = 0 ; i < cJSON_GetArraySize(services) ; i++) {
 			cfg = cJSON_GetArrayItem(services, i);
@@ -416,9 +428,6 @@ static void read_config(void) {
 
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "service")))
 				s->service = strdup(type->valuestring);
-
-			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "index")))
-				s->index = type->valueint;
 
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "host")))
 				s->cfg.host = strdup(type->valuestring);
@@ -432,20 +441,24 @@ static void read_config(void) {
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "extra")))
 				s->cfg.extra = strdup(type->valuestring);
 
-			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_lat")))
-				s->cfg.location_lat = strdup(type->valuestring);
-
-			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location_long")))
-				s->cfg.location_long = strdup(type->valuestring);
-
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "metric")))
 				s->cfg.metric = type->valueint;
 
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "enabled")))
 				s->enabled = type->valueint;
 
-			printf("At index %d - Found  %s (%s)", i, s->service, s->cfg.host);
-			printf("  enabled[%d]=%d\n", s->index, s->enabled);
+			if (station.name)
+				s->station.name = strdup(station.name);
+			if (station.location)
+				s->station.location = strdup(station.location);
+			if (station.latitude)
+				s->station.latitude = strdup(station.latitude);
+			if (station.longitude)
+				s->station.longitude = strdup(station.longitude);
+			s->station.elevation = station.elevation;
+
+			printf("Found  %s (%s) %s\n", s->service, s->cfg.host,
+					(s->enabled) ? "enabled" : "disabled");
 
 			/*
 			 * Is there some way to hook up s-funcs dynamically here?

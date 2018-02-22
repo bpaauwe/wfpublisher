@@ -45,7 +45,8 @@ static int connect_to_database(MYSQL *sql, char *db_host, char *db_name,
 /*
  * Store data in a MYSQL (or compatible) database
  */
-void send_to_db(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_db(struct cfg_info *cfg, struct station_info *station,
+				weather_data_t *wd)
 {
 	struct timeval start, end;
 	char *ts_start, *ts_end;

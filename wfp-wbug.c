@@ -41,7 +41,8 @@ static int count = 0;
 /*
  * WeatherBug publisher
  */
-void send_to_weatherbug(struct cfg_info *cfg, weather_data_t *wd)
+void send_to_weatherbug(struct cfg_info *cfg, struct station_info *station,
+						weather_data_t *wd)
 {
 	char *str;
 	char *request;
