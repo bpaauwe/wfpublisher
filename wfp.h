@@ -30,6 +30,7 @@
 typedef struct _wd {
 	char *timestamp;
 	double pressure;
+	double pressure_sealevel;
 	double temperature;
 	double humidity;
 	double windspeed;
@@ -147,6 +148,7 @@ extern double mb2in(double mb);
 extern double MS2MPH(double ms);
 extern double TempF(double tempc);
 extern char *DegreesToCardinal(double deg);
+extern double station_2_sealevel(double, double);
 extern int calc_pressure_trend(double);
 extern double calc_feelslike(double, double, double);
 extern char *time_stamp(int gmt, int mode);

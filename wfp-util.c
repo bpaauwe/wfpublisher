@@ -435,6 +435,7 @@ void unit_convert(weather_data_t *wd, unsigned int skip)
 	if (!(skip & NO_PRESSURE)) {
 		/* Pressure from mb to in/hg */
 		wd->pressure = mb2in(wd->pressure);
+		wd->pressure_sealevel = mb2in(wd->pressure_sealevel);
 	}
 
 	/* distance from km to miles */

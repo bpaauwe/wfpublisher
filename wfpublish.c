@@ -77,6 +77,7 @@ int verbose = 0;         /* set when verbose output is enabled */
 weather_data_t wd;
 int interval = 0;
 struct service_info *sinfo = NULL;
+struct station_info station;
 
 static pthread_mutex_t data_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  data_event_trigger = PTHREAD_COND_INITIALIZER;
@@ -271,6 +272,8 @@ static void wfp_air_parse(cJSON *air) {
 		SETWD(ob, wd.distance, 5)		// kilometers
 
 		/* derrived values */
+		wd.pressure_sealevel = station_2_sealevel(wd.pressure,
+				(station.elevation * .3048));
 		wd.dewpoint = calc_dewpoint(wd.temperature, wd.humidity);	// farhenhi
 		wd.heatindex = calc_heatindex(wd.temperature, wd.humidity);// Celsius
 		wd.trend = calc_pressure_trend(wd.pressure);
@@ -393,7 +396,6 @@ static void read_config(void) {
 	const cJSON *type = NULL;
 	int i;
 	struct service_info *s;
-	struct station_info station;
 
 
 	printf("Reading configuration file.\n");
