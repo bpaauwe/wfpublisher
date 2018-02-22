@@ -189,6 +189,10 @@ static void mqtt_publish(struct cfg_info *cfg, weather_data_t *wd)
 	ret += mosquitto_publish(mosq, NULL, "home/climate/rain_24hr",
 			strlen(buf), buf, 0, false);
 
+	sprintf(buf, "%s", wd->wind_dir);
+	ret += mosquitto_publish(mosq, NULL, "home/climate/wind_dir_text",
+			strlen(buf), buf, 0, false);
+
 	if (ret)
 		fprintf(stderr, "Publishing failed %d times\n", ret);
 

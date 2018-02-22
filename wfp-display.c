@@ -84,8 +84,8 @@ static void display_wd(struct cfg_info *cfg, weather_data_t *wd)
 	printf("Pressure:      %6.1f%-6s   Humidity:   %5.1f%%        Feels like: %5.1f%s\n\n",
 			wd->pressure, p_str, wd->humidity, wd->feelslike, t_str);
 
-	printf("Wind speed:     %5.1f%s     Wind dir:   %5.0f°\n",
-			wd->windspeed, s_str, wd->winddirection);
+	printf("Wind speed:     %5.1f%s     Wind dir:   %5.0f° (%s)\n",
+			wd->windspeed, s_str, wd->winddirection, wd->wind_dir);
 	printf("Gust speed:     %5.1f%s     Gust dir:   %5.0f°\n\n",
 			wd->gustspeed, s_str, wd->gustdirection);
 
