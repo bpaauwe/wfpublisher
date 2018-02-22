@@ -56,7 +56,7 @@ typedef struct _wd {
 	double windchill;
 	double trend;
 	double feelslike;
-	unsigned long valid;
+	char wind_dir[4];
 } weather_data_t;
 
 
@@ -138,6 +138,7 @@ extern double calc_windchill(double, double);
 extern double mb2in(double mb);
 extern double MS2MPH(double ms);
 extern double TempF(double tempc);
+extern char *DegreesToCardinal(double deg);
 extern int calc_pressure_trend(double);
 extern double calc_feelslike(double, double, double);
 extern char *time_stamp(int gmt, int mode);

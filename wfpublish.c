@@ -306,7 +306,9 @@ static void wfp_sky_parse(cJSON *sky) {
 		SETWD(ob, wd.winddirection, 7);
 		SETWD(ob, wd.solar, 10);
 
+
 		/* derrived values */
+		strncpy(wd.wind_dir, DegreesToCardinal(wd.winddirection), 3);
 		wd.windchill = calc_windchill(wd.temperature, wd.windspeed);
 		wd.feelslike = calc_feelslike(wd.temperature, wd.windspeed, wd.humidity);
 
