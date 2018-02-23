@@ -78,30 +78,30 @@ static void display_wd(struct cfg_info *cfg, struct station_info *station,
 	printf("%c[2J%c[;H", 27, 27); /* clear the screen */
 	printf("%s  -- Last Update: %s\n\n", station->name, wd->timestamp);
 
-	printf("Temperature:    %5.1f%s       High:       %5.1f%s       Low:        %5.1f%s\n",
+	printf("Temperature:    %5.1f%s       High:        %5.1f%s       Low:        %5.1f%s\n",
 			wd->temperature, t_str, wd->temperature_high, t_str, wd->temperature_low, t_str);
-	printf("Dew point:      %5.1f%s       Windchill:  %5.1f%s       Heat index: %5.1f%s\n\n",
+	printf("Dew point:      %5.1f%s       Windchill:   %5.1f%s       Heat index: %5.1f%s\n\n",
 			wd->dewpoint, t_str, wd->windchill, t_str, wd->heatindex, t_str);
 
-	printf("Pressure:      %6.1f%-6s   Humidity:   %5.1f%%        Feels like: %5.1f%s\n\n",
+	printf("Pressure:      %6.1f%-6s   Humidity:    %5.1f%%        Feels like: %5.1f%s\n\n",
 			wd->pressure, p_str, wd->humidity, wd->feelslike, t_str);
 
-	printf("Wind speed:     %5.1f%s     Wind dir:   %5.0f° (%s)\n",
+	printf("Wind speed:     %5.1f%s     Wind dir:    %5.0f° (%s)\n",
 			wd->windspeed, s_str, wd->winddirection, wd->wind_dir);
-	printf("Gust speed:     %5.1f%s     Gust dir:   %5.0f°\n\n",
+	printf("Gust speed:     %5.1f%s     Gust dir:    %5.0f°\n\n",
 			wd->gustspeed, s_str, wd->gustdirection);
 
-	printf("Illumination:   %5.1f Lux     Solar Rad:  %5.01f W/m^2   UV index:   %5.0f\n\n",
+	printf("Illumination:   %5.1f Lux     Solar Rad:   %5.01f W/m^2   UV index:   %5.0f\n\n",
 			wd->illumination, wd->solar, wd->uv);
 
-	printf("Rain:           %5.1f%s      Daily rain: %5.1f%s\n",
-			wd->rain, r_str, wd->daily_rain, r_str);
-	printf("Last hour rain: %5.1f%s      Last 24 hr: %5.1f%s\n",
-			wd->rainfall_60min, r_str, wd->rainfall_24hr, r_str);
-	printf("Day rain:       %5.1f%s      Month rain: %5.1f%s      Year rain:  %5.1f%s\n\n",
-			wd->rainfall_day, r_str, wd->rainfall_month, r_str, wd->rainfall_year, r_str);
+	printf("Rain:          %6.2f%s      Rain 1hr:   %6.2f%s      Rain 24hrs:%6.2f%s\n",
+			wd->rain, r_str, wd->rainfall_60min, r_str, wd->rainfall_24hr,
+			r_str);
+	printf("Daily rain:    %6.2f%s      Monthly:    %6.2f%s      Yearly:    %6.2f%s\n\n",
+			wd->rainfall_day, r_str, wd->rainfall_month, r_str,
+			wd->rainfall_year, r_str);
 
-	printf("Pressure trend: %7s       Lighting:   %5d         Distance:   %5.1f%s\n",
+	printf("Pressure trend: %7s       Lighting:    %5d         Distance:  %5.1f%s\n",
 			trend, wd->strikes, wd->distance, d_str);
 
 	printf("-------------------------------------------------------------------------------\n");
