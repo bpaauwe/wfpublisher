@@ -147,7 +147,7 @@ static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->solar);
-	ret += mosquitto_publish(mosq, NULL, "home/climate/solar_radition",
+	ret += mosquitto_publish(mosq, NULL, "home/climate/solar_radiation",
 			strlen(buf), buf, 0, false);
 
 	sprintf(buf, "%f", wd->uv);
