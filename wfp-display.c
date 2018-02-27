@@ -45,6 +45,7 @@
 static void display_wd(struct cfg_info *cfg, struct station_info *station,
 					weather_data_t *wd)
 {
+	struct sensor_list *list = wd->tower_list;
 	char t_str[4];
 	char s_str[5];
 	char r_str[4];
@@ -101,8 +102,18 @@ static void display_wd(struct cfg_info *cfg, struct station_info *station,
 			wd->rainfall_day, r_str, wd->rainfall_month, r_str,
 			wd->rainfall_year, r_str);
 
-	printf("Pressure trend: %7s       Lighting:    %5d         Distance:  %5.1f%s\n",
+	printf("Pressure trend: %7s       Lighting:    %5d         Distance:  %5.1f%s\n\n",
 			trend, wd->strikes, wd->distance, d_str);
+
+	while(list) {
+		printf("Sensor:       %9.9s       Humidity:    %5.1f%%\n",
+				list->sensor->location, list->sensor->humidity);
+		printf("Temperature:    %5.1f%s       High:        %5.1f%s       Low:        %5.1f%s\n\n",
+				list->sensor->temperature, t_str,
+				list->sensor->temperature_high, t_str,
+				list->sensor->temperature_low, t_str);
+		list = list->next;
+	}
 
 	printf("-------------------------------------------------------------------------------\n");
 

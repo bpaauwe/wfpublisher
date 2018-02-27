@@ -60,6 +60,7 @@ static int wf_message_parse(char *msg);
 static void wfp_air_parse(cJSON *air);
 static void wfp_sky_parse(cJSON *sky);
 static void wfp_wind_parse(cJSON *wind);
+static void wfp_tower_parse(cJSON *tower);
 static void read_config(void);
 static void *publish(void *args);
 static void initialize_publishers(void);
@@ -79,6 +80,7 @@ weather_data_t wd;
 int interval = 0;
 struct service_info *sinfo = NULL;
 struct station_info station;
+cJSON *sensor_mapping = NULL;
 
 static pthread_mutex_t data_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  data_event_trigger = PTHREAD_COND_INITIALIZER;
@@ -231,8 +233,12 @@ static int wf_message_parse(char *msg) {
 			if (verbose) printf("-> Device status packet\n");
 		} else if (strcmp(type->valuestring, "hub_status") == 0) {
 			if (verbose) printf("-> Hub status packet\n");
+		} else if (strcmp(type->valuestring, "obs_tower") == 0) {
+			if (verbose) printf("-> Tower packet\n");
+			wfp_tower_parse(msg_json);
 		} else {
 			if (verbose) printf("-> Unknown packet type: %s\n", type->valuestring);
+			printf("-> Unknown packet type: %s\n", type->valuestring);
 		}
 
 		//printf("%s\n", cJSON_Print(msg_json));
@@ -372,6 +378,82 @@ static void wfp_wind_parse(cJSON *wind) {
 	}
 }
 
+static void wfp_tower_parse(cJSON *tower) {
+	cJSON *obs;
+	cJSON *ob;
+	cJSON *tmp;
+	cJSON *cfg;
+	int i;
+	struct tm *lt;
+	struct sensor_list *list;
+
+	tmp = cJSON_GetObjectItemCaseSensitive(tower, "serial_number");
+	if (debug)
+		printf("Tower data serial number: %s\n", tmp->valuestring);
+
+	list = wd.tower_list;
+	while(list) {
+		if (strcmp(list->sensor->sensor_id, tmp->valuestring) == 0)
+			break;
+		list = list->next;
+	}
+
+	if (!list) {
+		list = (struct sensor_list *)malloc(sizeof(struct sensor_list));
+		if (!list) {
+			printf("Failed to allocate memory for sensor.\n");
+			return;
+		}
+		list->sensor = (struct sensor_data *)malloc(sizeof(struct sensor_data));
+		memset (list->sensor, 0, sizeof(struct sensor_data));
+		list->sensor->sensor_id = strdup(tmp->valuestring);
+		list->sensor->temperature_high = -100;
+		list->sensor->temperature_low = 100;
+		list->next = NULL;
+
+		/* Lookup the location */
+		for (i = 0 ; i < cJSON_GetArraySize(sensor_mapping) ; i++) {
+			cfg = cJSON_GetArrayItem(sensor_mapping, i);
+			tmp = cJSON_GetObjectItemCaseSensitive(cfg, "serial_number");
+			if (strcmp(list->sensor->sensor_id, tmp->valuestring) == 0) {
+				tmp = cJSON_GetObjectItemCaseSensitive(cfg, "location");
+				strcpy(list->sensor->location, tmp->valuestring);
+				break;
+			}
+		}
+
+		if (list->sensor->location[0] == '\0')
+			strcpy(list->sensor->location, list->sensor->sensor_id);
+
+		/* Add to head of list */
+		list->next = wd.tower_list;
+		wd.tower_list = list;
+	}
+
+	obs = cJSON_GetObjectItemCaseSensitive(tower, "obs");
+	for (i = 0 ; i < cJSON_GetArraySize(obs) ; i++) {
+		ob = cJSON_GetArrayItem(obs, i);
+
+		/* First item is a timestamp, lets use it for last update */
+		tmp = cJSON_GetArrayItem(ob, 0);
+		lt = localtime((long *)&tmp->valueint);
+		if (list->sensor->timestamp == NULL)
+			list->sensor->timestamp = (char *)malloc(25);
+		sprintf(list->sensor->timestamp, "%4d-%02d-%02d %02d:%02d:%02d",
+				lt->tm_year + 1900, lt->tm_mon + 1, lt->tm_mday,
+				lt->tm_hour, lt->tm_min, lt->tm_sec);
+
+		SETWD(ob, list->sensor->temperature, 2)	// Celsius
+		SETWD(ob, list->sensor->humidity, 3)		// percent
+
+		if (list->sensor->temperature > list->sensor->temperature_high)
+			list->sensor->temperature_high = list->sensor->temperature;
+		if (list->sensor->temperature < list->sensor->temperature_low)
+			list->sensor->temperature_low = list->sensor->temperature;
+	}
+}
+
+
 /*
  * Given a publishing service, fill in the function pointer
  * table for the init, update, cleanup functions.
@@ -407,6 +489,7 @@ static void read_config(void) {
 	cJSON *cfg_json;
 	cJSON *services;
 	cJSON *cfg;
+	cJSON *mapping;
 	const cJSON *type = NULL;
 	int i;
 	struct service_info *s;
@@ -491,6 +574,19 @@ static void read_config(void) {
 			s->next = sinfo;
 			sinfo = s;
 		}
+
+		mapping = cJSON_GetObjectItemCaseSensitive(cfg_json, "mapping");
+		sensor_mapping = cJSON_Duplicate(mapping, 1);
+		/*
+		for (i = 0 ; i < cJSON_GetArraySize(mapping) ; i++) {
+			cfg = cJSON_GetArrayItem(mapping, i);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "serial_number")))
+				tower_map[i].serial_number = strdup(type->valuestring);
+			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "location")))
+				tower_map[i].location = strdup(type->valuestring);
+		}
+		*/
+
 	}
 }
 

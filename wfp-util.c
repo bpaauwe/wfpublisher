@@ -419,6 +419,8 @@ double mm2inch(double mm) {
  */
 void unit_convert(weather_data_t *wd, unsigned int skip)
 {
+	struct sensor_list *list = wd->tower_list;
+
 	/* convert temperature from C to F */
 	wd->temperature = TempF(wd->temperature);
 	wd->temperature_high = TempF(wd->temperature_high);
@@ -450,5 +452,13 @@ void unit_convert(weather_data_t *wd, unsigned int skip)
 	wd->rainfall_year = mm2inch(wd->rainfall_year);
 	wd->rainfall_60min = mm2inch(wd->rainfall_60min);
 	wd->rainfall_24hr = mm2inch(wd->rainfall_24hr);
+
+	/* convert temperature from C to F for extra sensors */
+	while (list) {
+		list->sensor->temperature = TempF(list->sensor->temperature);
+		list->sensor->temperature_high = TempF(list->sensor->temperature_high);
+		list->sensor->temperature_low = TempF(list->sensor->temperature_low);
+		list = list->next;
+	}
 }
 

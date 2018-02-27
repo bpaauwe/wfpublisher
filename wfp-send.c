@@ -40,6 +40,8 @@ extern void *send_to_log(struct cfg_info *cfg, weather_data_t *data);
 extern void *send_to_db(struct cfg_info *cfg, weather_data_t *data);
 extern void *mqtt_publish(struct cfg_info *cfg, weather_data_t *data);
 
+static void wdfree(weather_data_t *wd);
+
 extern int debug;
 extern int verbose;
 
@@ -63,11 +65,72 @@ void *invoke_publisher(void *data)
 
 	(t->sinfo->funcs.update)(&t->sinfo->cfg, &t->sinfo->station, t->data);
 
-	free(t->data->timestamp);
-	free(t->data);
+	wdfree(t->data);
 	free(t);
 	return NULL;
 }
+
+/*
+ * Make a copy of the weather data structure.
+ */
+static weather_data_t *wdcopy(weather_data_t *wd)
+{
+	weather_data_t *cpy;
+	struct sensor_list *list, *list_cp;
+
+	cpy = malloc(sizeof(weather_data_t));
+	if (!cpy) {
+		fprintf(stderr, "Failed to allocate memory for data copy\n");
+		return NULL;
+	}
+
+	memcpy(cpy, wd, sizeof(weather_data_t));
+	cpy->tower_list = NULL;
+	cpy->timestamp = NULL;
+
+	/* Copy the timestamp */
+	if (wd->timestamp)
+		cpy->timestamp = strdup(wd->timestamp);
+
+	/* Copy sensor data */
+	list = wd->tower_list;
+	while (list) {
+		list_cp = malloc(sizeof(struct sensor_list));
+		list_cp->sensor = malloc(sizeof(struct sensor_data));
+		memcpy(list_cp->sensor, list->sensor, sizeof(struct sensor_data));
+
+		/* should we copy the timestamp and sensor_id? */
+
+		/* Add new entry to front of list */
+		list_cp->next = cpy->tower_list;
+		cpy->tower_list = list_cp;
+
+		list = list->next;
+	}
+
+	return cpy;
+}
+
+static void wdfree(weather_data_t *wd)
+{
+	struct sensor_list *list;
+
+	/* Free the timestamp */
+	if (wd->timestamp)
+		free(wd->timestamp);
+
+	/* Free sensor data */
+	list = wd->tower_list;
+	while (wd->tower_list) {
+		list = wd->tower_list;
+		wd->tower_list = wd->tower_list->next;
+		free(list->sensor);
+		free(list);
+	}
+
+	free(wd);
+}
+
 
 void send_to(struct service_info *sinfo, weather_data_t *wd)
 {
@@ -83,14 +146,9 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 	send_count++;
 
 	/* Make a copy of the data so it doesn't get overwritten */
-	wd_copy = malloc(sizeof(weather_data_t));
-	if (!wd_copy) {
-		fprintf(stderr, "Failed to allocate memory for data copy\n");
+	wd_copy = wdcopy(wd);
+	if (!wd_copy)
 		return;
-	}
-	memcpy(wd_copy, wd, sizeof(weather_data_t));
-	if (wd->timestamp)
-		wd_copy->timestamp = strdup(wd->timestamp);
 
 	tinfo = malloc(sizeof(struct thread_info));
 	tinfo->sinfo = sinfo;

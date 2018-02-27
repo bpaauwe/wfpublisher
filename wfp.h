@@ -23,6 +23,23 @@
 #ifndef _WFP_H_
 #define _WFP_H_
 
+struct sensor_data {
+	char *sensor_id;
+	char *timestamp;
+	double temperature;
+	double humidity;
+	double temperature_high;
+	double temperature_low;
+	char location[50];
+};
+
+struct sensor_list {
+	struct sensor_data *sensor;
+	struct sensor_list *prev;
+	struct sensor_list *next;
+};
+
+
 /*
  * This structure holds a data record. It is built from the current
  * database record, calculated values, and the data collected from the bridge.
@@ -58,8 +75,14 @@ typedef struct _wd {
 	double trend;
 	double feelslike;
 	char wind_dir[4];
+	struct sensor_list *tower_list;
 } weather_data_t;
 
+
+struct mapping_info {
+	char *serial_number;
+	char *location;
+};
 
 /*
  * Configuration information below.  It is built into the code rather than
