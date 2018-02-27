@@ -64,6 +64,7 @@ static void read_config(void);
 static void *publish(void *args);
 static void initialize_publishers(void);
 static void cleanup_publishers(void);
+static void read_rainfall(void);
 
 extern void send_to(struct service_info *sinfo, weather_data_t *wd);
 extern void rainfall(double amount);
@@ -95,6 +96,9 @@ int main (int argc, char **argv)
 	struct sockaddr_in s;
 	int optval;
 	int st = 0;
+	time_t t = time(NULL);
+	struct tm now;
+	struct tm start;
 
 	/* process command line arguments */
 	if (argc > 1) {
@@ -128,11 +132,13 @@ int main (int argc, char **argv)
 		}
 	}
 
+	localtime_r(&t, &start);
 	memset(&wd, 0, sizeof(weather_data_t));
 	wd.temperature_high = -100;
 	wd.temperature_low = 150;
 
 	read_config();
+	read_rainfall();
 
 	initialize_publishers();
 
@@ -162,6 +168,14 @@ int main (int argc, char **argv)
 	bind(sock, (struct sockaddr *)&s, sizeof(s));
 
 	while ((bytes = read(sock, line, 1024)) > 0) {
+		t = time(NULL);
+		localtime_r(&t, &now);
+		if (now.tm_mday != start.tm_mday) {
+			wd.temperature_high = -100;
+			wd.temperature_low = 150;
+			localtime_r(&t, &start);
+		}
+
 		line[bytes] = '\0';
 		st |= wf_message_parse(line);
 		//printf("recv: %s\n", line);
@@ -479,6 +493,92 @@ static void read_config(void) {
 		}
 	}
 }
+
+
+/*
+ * Read the saved rainfall data and update the data structure
+ */
+static void read_rainfall(void) {
+	FILE *fp;
+	char *json;
+	int len;
+	cJSON *rain_json;
+	cJSON *saved_at;
+	cJSON *tmp;
+	time_t t = time(NULL);
+	struct tm gt;
+
+	localtime_r(&t, &gt);
+
+	printf("Reading rainfall file.\n");
+	json = malloc(4096);
+	fp = fopen("rainfall.json", "r");
+	len = fread(json, 1, 4096, fp);
+	fclose (fp);
+
+	json[len] = '\0';
+
+	if (len > 0) {
+		rain_json = cJSON_Parse(json);
+		saved_at = cJSON_GetObjectItemCaseSensitive(rain_json, "time");
+		tmp = cJSON_GetObjectItemCaseSensitive(saved_at, "year");
+		if (tmp) {
+			if (tmp->valueint != gt.tm_year + 1900) {
+				/* Year doesn't match so skip everything */
+				fprintf(stderr, "Skipping rain, year doesn't match\n");
+				free(json);
+				return;
+			}
+		}
+
+		/* Set saved yearly value */
+		tmp = cJSON_GetObjectItemCaseSensitive(rain_json, "rain_current_year");
+		wd.rainfall_year = tmp->valuedouble;
+
+		tmp = cJSON_GetObjectItemCaseSensitive(saved_at, "month");
+		if (tmp) {
+			if (tmp->valueint == gt.tm_mon + 1) {
+				tmp = cJSON_GetObjectItemCaseSensitive(rain_json,
+						"rain_current_month");
+				wd.rainfall_month = tmp->valuedouble;
+			} else {
+				/* month doesn't match, skip everything else */
+				fprintf(stderr, "Skipping month rain.\n");
+				free(json);
+				return;
+			}
+		}
+
+		tmp = cJSON_GetObjectItemCaseSensitive(saved_at, "day");
+		if (tmp) {
+			if (tmp->valueint == gt.tm_mday) {
+				tmp = cJSON_GetObjectItemCaseSensitive(rain_json,
+						"rain_current_day");
+				wd.rainfall_day = tmp->valuedouble;
+				tmp = cJSON_GetObjectItemCaseSensitive(rain_json, "rain_24");
+				wd.rainfall_24hr = tmp->valuedouble;
+			} else {
+				fprintf(stderr, "Skipping day rain.\n");
+				free(json);
+				return;
+			}
+		}
+
+		tmp = cJSON_GetObjectItemCaseSensitive(saved_at, "hour");
+		if (tmp) {
+			if (tmp->valueint == gt.tm_hour) {
+				tmp = cJSON_GetObjectItemCaseSensitive(rain_json,
+						"rain_current_hour");
+				wd.rainfall_1hr = tmp->valuedouble;
+				tmp = cJSON_GetObjectItemCaseSensitive(rain_json, "rain_60");
+				wd.rainfall_60min = tmp->valuedouble;
+			}
+		}
+
+	}
+	free(json);
+}
+
 
 /*
  * initialize_publishers

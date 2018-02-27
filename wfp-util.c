@@ -410,7 +410,7 @@ double km2miles(double km) {
 }
 
 double mm2inch(double mm) {
-	return mm * 0.03937;
+	return (mm == 0.0) ? 0.0 : mm * 0.03937;
 }
 
 /*
