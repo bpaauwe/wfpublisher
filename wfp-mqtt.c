@@ -74,6 +74,7 @@ static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 {
 	char buf[30];
 	int ret = 0;
+	struct sensor_list *list = wd->tower_list;
 
 	if (!cfg->metric)
 		unit_convert(wd, CONVERT_ALL);
@@ -209,6 +210,28 @@ static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 	sprintf(buf, "%d", station->elevation);
 	ret += mosquitto_publish(mosq, NULL, "home/climate/elevation",
 			strlen(buf), buf, 0, false);
+
+	while(list) {
+		char topic[80];
+
+		sprintf(topic, "home/%s/temperature", list->sensor->location);
+		sprintf(buf, "%f", list->sensor->temperature);
+		ret += mosquitto_publish(mosq, NULL, topic, strlen(buf), buf, 0, false);
+
+		sprintf(topic, "home/%s/high_temperature", list->sensor->location);
+		sprintf(buf, "%f", list->sensor->temperature_high);
+		ret += mosquitto_publish(mosq, NULL, topic, strlen(buf), buf, 0, false);
+
+		sprintf(topic, "home/%s/low_temperature", list->sensor->location);
+		sprintf(buf, "%f", list->sensor->temperature_low);
+		ret += mosquitto_publish(mosq, NULL, topic, strlen(buf), buf, 0, false);
+
+		sprintf(topic, "home/%s/humidity", list->sensor->location);
+		sprintf(buf, "%f", list->sensor->humidity);
+		ret += mosquitto_publish(mosq, NULL, topic, strlen(buf), buf, 0, false);
+
+		list = list->next;
+	}
 
 	if (ret)
 		fprintf(stderr, "Publishing failed %d times\n", ret);
