@@ -1,0 +1,87 @@
+{
+	"version" : "0.2",
+	"name" : "Station Name",
+	"location" : "Station address.",
+	"latitude" : "3840.40N",
+	"longitude" : "12100.42W",
+	"elevation" : 1306,
+	"elevation_meters" : 398,
+	"mapping" : [
+		{
+			"serial_number" : "ACU-1274",
+			"location" : "Outside"
+		},
+		{
+			"serial_number" : "ACU-2778",
+			"location" : "Garage"
+		}
+		],
+	"services" : [
+	{
+	"service" : "logfile",
+	"host" : "wfpublisher-1.log",
+	"name" : "",
+	"password" : "",
+	"extra" : "",
+	"enabled" : 0
+	},
+	{
+	"service" : "mysql",
+	"host" : "hostname",
+	"name" : "database_name",
+	"password" : "database_password",
+	"extra" : "weather",
+	"enabled" : 0
+	},
+	{
+	"service" : "WeatherUnderground",
+	"host" : "weatherstation.wunderground.com",
+	"name" : "XXXXXXXXXX",
+	"password" : "XXXXXXXXXX",
+	"extra" : "",
+	"enabled" : 0
+	},
+	{
+	"service" : "WeatherBug",
+	"host" : "data.backyard2.weatherbug.com",
+	"name" : "pXXXXX",
+	"password" : "XXXXXXXXX",
+	"extra" : "XXXXX",
+	"enabled" : 0
+	},
+	{
+	"service" : "CWOP",
+	"host" : "cwop.aprs.net",
+	"name" : "EWXXXX",
+	"password" : "",
+	"extra" : "",
+	"enabled" : 0
+	},
+	{
+	"service" : "PersonalWeatherStation",
+	"host" : "www.pwsweather.com",
+	"name" : "XXXXXXX",
+	"password" : "XXXXXXXXXX",
+	"extra" : "",
+	"enabled" : 0
+	},
+	{
+	"service" : "MQTT",
+	"host" : "host_name",
+	"name" : "",
+	"password" : "",
+	"extra" : "1883",
+	"enabled" : 1
+	},
+	{
+	"service" : "Display",
+	"host" : "N/A",
+	"name" : "",
+	"password" : "",
+	"extra" : "",
+	"enabled" : 1
+	}
+	]
+}
+
+
