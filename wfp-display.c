@@ -117,7 +117,6 @@ static void display_wd(struct cfg_info *cfg, struct station_info *station,
 
 	printf("-------------------------------------------------------------------------------\n");
 
-	pthread_exit(NULL);
 	return;
 }
 

@@ -170,7 +170,6 @@ void send_to_pws(struct cfg_info *cfg, struct station_info *station,
 	}
 
 out:
-	pthread_exit(NULL);
 	return;
 }
 

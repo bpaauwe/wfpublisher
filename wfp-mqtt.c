@@ -236,7 +236,6 @@ static void mqtt_publish(struct cfg_info *cfg, struct station_info *station,
 	if (ret)
 		fprintf(stderr, "Publishing failed %d times\n", ret);
 
-	pthread_exit(NULL);
 	return;
 }
 

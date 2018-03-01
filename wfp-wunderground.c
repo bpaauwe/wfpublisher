@@ -127,7 +127,6 @@ void send_to_wunderground(struct cfg_info *cfg, struct station_info *station,
 		free(ts_end);
 	}
 
-	pthread_exit(NULL);
 	return;
 }
 

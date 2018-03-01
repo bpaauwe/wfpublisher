@@ -62,6 +62,6 @@ zip:
 	zip wfpublish-$(VERSION).zip $(SOURCE) Makefile README
 
 .c.o :
-	    $(CC) $(CFLAGS) -c $<
+	    $(CC) $(CFLAGS) -c -g $<
 
 

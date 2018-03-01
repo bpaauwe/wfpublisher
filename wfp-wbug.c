@@ -164,7 +164,6 @@ void send_to_weatherbug(struct cfg_info *cfg, struct station_info *station,
 	}
 
 out:
-	pthread_exit(NULL);
 	return;
 }
 

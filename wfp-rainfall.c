@@ -97,6 +97,7 @@ static void save_rainfall(weather_data_t *wd)
 	cJSON *rain;
 	cJSON *l_time;
 	FILE *fp;
+	char *output;
 
 	localtime_r(&t, &lt);
 
@@ -119,9 +120,12 @@ static void save_rainfall(weather_data_t *wd)
 	if (fp < 0) {
 		fprintf(stderr, "Failed to open rainfall.json for writing.\n");
 	} else {
-		fprintf(fp, "%s\n", cJSON_Print(rain));
+		output = cJSON_Print(rain);
+		fprintf(fp, "%s\n", output);
 		fclose(fp);
+		free(output);
 	}
 
+	//cJSON_Delete(l_time);
 	cJSON_Delete(rain);
 }

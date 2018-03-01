@@ -32,21 +32,10 @@
 #include <stdbool.h>
 #include "wfp.h"
 
-extern void *send_to_wunderground(struct cfg_info *cfg, weather_data_t *data);
-extern void *send_to_weatherbug(struct cfg_info *cfg, weather_data_t *data);
-extern void *send_to_cwop(struct cfg_info *cfg, weather_data_t *data);
-extern void *send_to_pws(struct cfg_info *cfg, weather_data_t *data);
-extern void *send_to_log(struct cfg_info *cfg, weather_data_t *data);
-extern void *send_to_db(struct cfg_info *cfg, weather_data_t *data);
-extern void *mqtt_publish(struct cfg_info *cfg, weather_data_t *data);
-
 static void wdfree(weather_data_t *wd);
 
 extern int debug;
 extern int verbose;
-
-extern char *resolve_host(char *host);
-extern char *resolve_host_ip6(char *host);
 
 struct thread_info {
 	struct service_info *sinfo;
@@ -158,7 +147,7 @@ void send_to(struct service_info *sinfo, weather_data_t *wd)
 
 	if (err) {
 		free(tinfo);
-		free(wd_copy);
+		wdfree(wd_copy);
 		ts = time_stamp(0, 1);
 		fprintf(stderr, "%s: Failed to create thread for %s (cnt=%d): %s\n",
 				ts, sinfo->cfg.name, send_count, strerror(err));

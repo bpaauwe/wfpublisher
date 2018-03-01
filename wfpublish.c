@@ -66,6 +66,7 @@ static void *publish(void *args);
 static void initialize_publishers(void);
 static void cleanup_publishers(void);
 static void read_rainfall(void);
+static void sinfo_free(struct service_info *info);
 
 extern void send_to(struct service_info *sinfo, weather_data_t *wd);
 extern void rainfall(double amount);
@@ -192,8 +193,27 @@ int main (int argc, char **argv)
 	}
 
 	close(sock);
-
+	pthread_cancel(send_thread);
 	cleanup_publishers();
+	cJSON_Delete(sensor_mapping);
+	sinfo_free(sinfo);
+	free(station.name);
+	free(station.location);
+	free(station.latitude);
+	free(station.longitude);
+	free_trend();
+
+	free(wd.timestamp);
+	while (wd.tower_list) {
+		struct sensor_list *l = wd.tower_list;
+		wd.tower_list = wd.tower_list->next;
+
+		free(l->sensor->sensor_id);
+		free(l->sensor->timestamp);
+		free(l->sensor);
+		free(l);
+	}
+
 
 	exit(0);
 }
@@ -372,9 +392,15 @@ static void wfp_wind_parse(cJSON *wind) {
 	direction = ob->valueint;
 
 	ob = cJSON_GetArrayItem(obs, 1); /* wind speed */
-	if (ob->valuedouble > wd.gustspeed) {
+	if (interval == GUST_INTERVAL) {
 		wd.gustspeed = ob->valuedouble;
 		wd.gustdirection = direction;
+		interval = 0;
+	} else {
+		if (ob->valuedouble > wd.gustspeed) {
+			wd.gustspeed = ob->valuedouble;
+			wd.gustdirection = direction;
+		}
 	}
 }
 
@@ -524,6 +550,8 @@ static void read_config(void) {
 			cfg = cJSON_GetArrayItem(services, i);
 
 			s = malloc(sizeof(struct service_info));
+			memset(s, 0, sizeof(struct service_info));
+			s->cfg.metric = 0;
 
 			if ((type = cJSON_GetObjectItemCaseSensitive(cfg, "service")))
 				s->service = strdup(type->valuestring);
@@ -586,10 +614,31 @@ static void read_config(void) {
 				tower_map[i].location = strdup(type->valuestring);
 		}
 		*/
-
 	}
+	cJSON_Delete(cfg_json);
+	free(json);
 }
 
+
+static void sinfo_free(struct service_info *info)
+{
+	struct service_info *list = info;
+
+	while (info) {
+		list = info;
+		info = info->next;
+		free(list->service);
+		free(list->cfg.host);
+		free(list->cfg.name);
+		free(list->cfg.pass);
+		free(list->cfg.extra);
+		free(list->station.name);
+		free(list->station.location);
+		free(list->station.latitude);
+		free(list->station.longitude);
+		free(list);
+	}
+}
 
 /*
  * Read the saved rainfall data and update the data structure
@@ -672,6 +721,7 @@ static void read_rainfall(void) {
 		}
 
 	}
+	cJSON_Delete(rain_json);
 	free(json);
 }
 

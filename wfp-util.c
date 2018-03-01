@@ -148,6 +148,7 @@ char *resolve_host(char *host)
 
 	if (inet_ntop(AF_INET, (void *)hent->h_addr_list[0], ip, iplen) == NULL) {
 		fprintf(stderr, "Failed to resolve host name.\n");
+		free(ip);
 		return NULL;
 	}
 
@@ -279,6 +280,7 @@ static struct trend_data *trend_tail = NULL;
 int calc_pressure_trend(double pressure) {
 	struct trend_data *td;
 	int p_trend = 0;
+	int count = 0;
 
 	td = (struct trend_data *)malloc(sizeof(struct trend_data));
 	td->t = time(NULL);
@@ -309,7 +311,27 @@ int calc_pressure_trend(double pressure) {
 		trend_tail = td;
 	}
 
+	/* Validate / count the trend list */
+	td = trend;
+	while (td) {
+		count++;
+		td = td->next;
+	}
+	printf("** Pressure Trend data has %d records\n", count);
+
+
 	return p_trend;
+}
+
+void free_trend(void)
+{
+	struct trend_data *td = trend;
+
+	while(trend) {
+		td = trend;
+		trend = trend->next;
+		free(td);
+	}
 }
 
 /*

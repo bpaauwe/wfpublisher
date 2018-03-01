@@ -173,6 +173,7 @@ extern double TempF(double tempc);
 extern char *DegreesToCardinal(double deg);
 extern double station_2_sealevel(double, double);
 extern int calc_pressure_trend(double);
+extern void free_trend(void);
 extern double calc_feelslike(double, double, double);
 extern char *time_stamp(int gmt, int mode);
 #define CONVERT_ALL 0x00

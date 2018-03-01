@@ -166,7 +166,6 @@ void send_to_cwop(struct cfg_info *cfg, struct station_info *station,
 		free(ts_end);
 	}
 
-	pthread_exit(NULL);
 	return;
 }
 

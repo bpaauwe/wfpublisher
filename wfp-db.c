@@ -126,7 +126,6 @@ end:
 		free(ts_end);
 	}
 
-	pthread_exit(NULL);
 	return;
 }
 
